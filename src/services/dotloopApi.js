@@ -151,7 +151,7 @@ class DotloopApiService {
     }
   }
 
-  // API request helper
+  // API request helper - now uses serverless proxy
   async makeRequest(endpoint, options = {}) {
     if (!this.isTokenValid()) {
       if (this.refreshToken) {
@@ -161,7 +161,11 @@ class DotloopApiService {
       }
     }
 
+    // Remove leading slash from endpoint if present
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+
     const config = {
+      method: options.method || 'GET',
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
@@ -170,15 +174,21 @@ class DotloopApiService {
       ...options,
     };
 
+    // Add data as body for non-GET requests
+    if (options.data && config.method !== 'GET') {
+      config.data = options.data;
+    }
+
     try {
-      const response = await axios(`${DOTLOOP_API}${endpoint}`, config);
+      // Use our proxy endpoint instead of direct API call
+      const response = await axios(`/api/dotloop/${cleanEndpoint}`, config);
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
         // Token might be expired, try to refresh
         await this.refreshAccessToken();
         config.headers.Authorization = `Bearer ${this.accessToken}`;
-        const retryResponse = await axios(`${DOTLOOP_API}${endpoint}`, config);
+        const retryResponse = await axios(`/api/dotloop/${cleanEndpoint}`, config);
         return retryResponse.data;
       }
       throw error;
@@ -213,81 +223,85 @@ class DotloopApiService {
     });
   }
 
-  // Loops API
-  async getLoops(params = {}) {
+  // Loops API - Updated to use profile-based endpoints
+  async getLoops(profileId, params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const endpoint = queryParams ? `/loops?${queryParams}` : "/loops";
+    const endpoint = queryParams ? `/profile/${profileId}/loop?${queryParams}` : `/profile/${profileId}/loop`;
     return this.makeRequest(endpoint);
   }
 
-  async getLoop(loopId) {
-    return this.makeRequest(`/loops/${loopId}`);
+  async getLoop(profileId, loopId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}`);
   }
 
-  async createLoop(loopData) {
-    return this.makeRequest("/loops", {
+  async createLoop(profileId, loopData) {
+    return this.makeRequest(`/profile/${profileId}/loop`, {
       method: "POST",
       data: loopData,
     });
   }
 
-  async updateLoop(loopId, loopData) {
-    return this.makeRequest(`/loops/${loopId}`, {
+  async updateLoop(profileId, loopId, loopData) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}`, {
       method: "PATCH",
       data: loopData,
     });
   }
 
   // Loop Details API
-  async getLoopDetails(loopId) {
-    return this.makeRequest(`/loops/${loopId}/details`);
+  async getLoopDetails(profileId, loopId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/detail`);
   }
 
-  async updateLoopDetails(loopId, detailsData) {
-    return this.makeRequest(`/loops/${loopId}/details`, {
+  async updateLoopDetails(profileId, loopId, detailsData) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/detail`, {
       method: "PATCH",
       data: detailsData,
     });
   }
 
   // Loop Folders API
-  async getFolders(loopId) {
-    return this.makeRequest(`/loops/${loopId}/folders`);
+  async getFolders(profileId, loopId, params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const endpoint = queryParams ? `/profile/${profileId}/loop/${loopId}/folder?${queryParams}` : `/profile/${profileId}/loop/${loopId}/folder`;
+    return this.makeRequest(endpoint);
   }
 
-  async getFolder(loopId, folderId) {
-    return this.makeRequest(`/loops/${loopId}/folders/${folderId}`);
+  async getFolder(profileId, loopId, folderId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}`);
   }
 
-  async createFolder(loopId, folderData) {
-    return this.makeRequest(`/loops/${loopId}/folders`, {
+  async createFolder(profileId, loopId, folderData) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder`, {
       method: "POST",
       data: folderData,
     });
   }
 
-  async updateFolder(loopId, folderId, folderData) {
-    return this.makeRequest(`/loops/${loopId}/folders/${folderId}`, {
+  async updateFolder(profileId, loopId, folderId, folderData) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}`, {
       method: "PATCH",
       data: folderData,
     });
   }
 
   // Loop Documents API
-  async getDocuments(loopId, folderId) {
-    return this.makeRequest(`/loops/${loopId}/folders/${folderId}/documents`);
+  async getDocuments(profileId, loopId, folderId, params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const endpoint = queryParams ? `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document?${queryParams}` : `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document`;
+    return this.makeRequest(endpoint);
   }
 
-  async getDocument(loopId, folderId, documentId) {
-    return this.makeRequest(`/loops/${loopId}/folders/${folderId}/documents/${documentId}`);
+  async getDocument(profileId, loopId, folderId, documentId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`);
   }
 
-  async uploadDocument(loopId, folderId, file, metadata = {}) {
+  async uploadDocument(profileId, loopId, folderId, file, metadata = {}) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("metadata", JSON.stringify(metadata));
 
-    return this.makeRequest(`/loops/${loopId}/folders/${folderId}/documents`, {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document`, {
       method: "POST",
       headers: {
         "Content-Type": "multipart/form-data",

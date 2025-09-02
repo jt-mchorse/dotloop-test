@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDotloopAuth } from '../hooks/useDotloopAuth';
 import dotloopApi from '../services/dotloopApi';
+import LoopsDisplay from './LoopsDisplay';
 
 const Dashboard = () => {
   const { user, logout } = useDotloopAuth();
@@ -34,7 +35,6 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchData(dotloopApi.getProfiles, setProfiles, 'profiles');
-      fetchData(dotloopApi.getLoops, setLoops, 'loops');
       fetchData(dotloopApi.getContacts, setContacts, 'contacts');
       fetchData(dotloopApi.getTemplates, setTemplates, 'templates');
     }
@@ -172,18 +172,17 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Data Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Comprehensive Loops Display */}
+        <div className="mb-8">
+          <LoopsDisplay user={user} />
+        </div>
+
+        {/* Quick Data Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <DataCard
             title="Profiles"
             data={profiles}
             loading={loading.profiles}
-            error={error}
-          />
-          <DataCard
-            title="Loops"
-            data={loops}
-            loading={loading.loops}
             error={error}
           />
           <DataCard
@@ -198,12 +197,23 @@ const Dashboard = () => {
             loading={loading.templates}
             error={error}
           />
-          <DataCard
-            title="Documents"
-            data={documents}
-            loading={loading.documents}
-            error={error}
-          />
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Total Profiles:</span>
+                <span className="text-sm font-medium">{profiles.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Total Contacts:</span>
+                <span className="text-sm font-medium">{contacts.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Total Templates:</span>
+                <span className="text-sm font-medium">{templates.length}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* API Testing Section */}
@@ -217,10 +227,10 @@ const Dashboard = () => {
               Refresh Profiles
             </button>
             <button
-              onClick={() => fetchData(dotloopApi.getLoops, setLoops, 'loops')}
+              onClick={() => window.location.reload()}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
-              Refresh Loops
+              Refresh All Data
             </button>
             <button
               onClick={() => fetchData(dotloopApi.getContacts, setContacts, 'contacts')}
@@ -235,15 +245,10 @@ const Dashboard = () => {
               Refresh Templates
             </button>
             <button
-              onClick={() => {
-                if (loops.length > 0) {
-                  const firstLoop = loops[0];
-                  fetchData(() => dotloopApi.getFolders(firstLoop.id), setDocuments, 'documents');
-                }
-              }}
+              onClick={() => console.log('User data:', user)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
-              Refresh Documents
+              Debug User Data
             </button>
           </div>
         </div>
