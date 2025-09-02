@@ -4,7 +4,9 @@ import dotloopApi from '../services/dotloopApi';
 import LoopsDisplay from './LoopsDisplay';
 
 const Dashboard = () => {
-  const { user, logout } = useDotloopAuth();
+  const { user, logout, isAuthenticated, isLoading } = useDotloopAuth();
+  
+  console.log('🔍 [DASHBOARD] Render state:', { user, isAuthenticated, isLoading });
   const [profiles, setProfiles] = useState([]);
   const [loops, setLoops] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -68,12 +70,27 @@ const Dashboard = () => {
     </div>
   );
 
-  if (!user) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-900">Loading...</h2>
+          <p className="text-gray-600">Checking authentication status</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">Not authenticated</h2>
           <p className="text-gray-600">Please log in to access the dashboard</p>
+          <div className="mt-4 text-xs text-gray-500">
+            Debug: isAuthenticated={isAuthenticated ? 'true' : 'false'}, user={user ? 'exists' : 'null'}
+          </div>
         </div>
       </div>
     );
