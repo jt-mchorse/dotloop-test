@@ -14,12 +14,55 @@ export const useDotloopAuth = () => {
       try {
         setIsLoading(true);
         if (dotloopApi.isTokenValid()) {
-          console.log("✅ [HOOK] Token is valid, fetching account data...");
-          const accountData = await dotloopApi.getAccount();
-          console.log("✅ [HOOK] Account data received:", accountData);
-          setUser(accountData.data);
-          setIsAuthenticated(true);
-          console.log("✅ [HOOK] User authenticated successfully");
+          console.log("✅ [HOOK] Token is valid, fetching user data...");
+          
+          // Try to fetch account data first
+          let userData = null;
+          try {
+            const accountData = await dotloopApi.getAccount();
+            console.log("✅ [HOOK] Account data received:", accountData);
+            userData = accountData?.data;
+          } catch (accountError) {
+            console.error("❌ [HOOK] Account fetch failed:", accountError);
+          }
+
+          // If account data is missing or incomplete, try profiles endpoint
+          if (!userData || !userData.default_profile_id) {
+            console.log("🔄 [HOOK] Fetching profiles as fallback...");
+            try {
+              const profilesData = await dotloopApi.getProfiles();
+              console.log("✅ [HOOK] Profiles data received:", profilesData);
+              
+              if (profilesData?.data?.length > 0) {
+                // Create user object with profile data
+                const primaryProfile = profilesData.data.find(p => p.is_default) || profilesData.data[0];
+                userData = {
+                  id: primaryProfile.profile_id,
+                  default_profile_id: primaryProfile.profile_id,
+                  profiles: profilesData.data,
+                  attributes: {
+                    name: primaryProfile.name,
+                    email: primaryProfile.email
+                  },
+                  type: "user"
+                };
+                console.log("✅ [HOOK] User data constructed from profiles:", userData);
+              }
+            } catch (profilesError) {
+              console.error("❌ [HOOK] Profiles fetch failed:", profilesError);
+            }
+          }
+
+          if (userData) {
+            setUser(userData);
+            setIsAuthenticated(true);
+            console.log("✅ [HOOK] User authenticated successfully");
+          } else {
+            console.error("❌ [HOOK] No user data available from any endpoint");
+            setIsAuthenticated(false);
+            setUser(null);
+            setError("Unable to fetch user data");
+          }
         } else {
           console.log("❌ [HOOK] Token is not valid");
           setIsAuthenticated(false);
@@ -71,14 +114,52 @@ export const useDotloopAuth = () => {
 
       console.log("🔄 [HOOK] Exchanging code for token...");
       await dotloopApi.exchangeCodeForToken(code);
-      console.log("✅ [HOOK] Token exchange successful, fetching account...");
+      console.log("✅ [HOOK] Token exchange successful, fetching user data...");
 
-      const accountData = await dotloopApi.getAccount();
-      console.log("✅ [HOOK] Account data received:", accountData);
+      // Try to fetch account data first
+      let userData = null;
+      try {
+        const accountData = await dotloopApi.getAccount();
+        console.log("✅ [HOOK] Account data received:", accountData);
+        userData = accountData?.data;
+      } catch (accountError) {
+        console.error("❌ [HOOK] Account fetch failed:", accountError);
+      }
 
-      setUser(accountData.data);
-      setIsAuthenticated(true);
-      console.log("✅ [HOOK] OAuth callback completed successfully");
+      // If account data is missing or incomplete, try profiles endpoint
+      if (!userData || !userData.default_profile_id) {
+        console.log("🔄 [HOOK] Fetching profiles as fallback...");
+        try {
+          const profilesData = await dotloopApi.getProfiles();
+          console.log("✅ [HOOK] Profiles data received:", profilesData);
+          
+          if (profilesData?.data?.length > 0) {
+            // Create user object with profile data
+            const primaryProfile = profilesData.data.find(p => p.is_default) || profilesData.data[0];
+            userData = {
+              id: primaryProfile.profile_id,
+              default_profile_id: primaryProfile.profile_id,
+              profiles: profilesData.data,
+              attributes: {
+                name: primaryProfile.name,
+                email: primaryProfile.email
+              },
+              type: "user"
+            };
+            console.log("✅ [HOOK] User data constructed from profiles:", userData);
+          }
+        } catch (profilesError) {
+          console.error("❌ [HOOK] Profiles fetch failed:", profilesError);
+        }
+      }
+
+      if (userData) {
+        setUser(userData);
+        setIsAuthenticated(true);
+        console.log("✅ [HOOK] OAuth callback completed successfully");
+      } else {
+        throw new Error("Unable to fetch user data from account or profiles endpoints");
+      }
 
       return true;
     } catch (err) {

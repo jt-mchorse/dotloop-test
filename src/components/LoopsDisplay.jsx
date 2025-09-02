@@ -9,32 +9,16 @@ const LoopsDisplay = ({ user }) => {
 
   console.log('🔍 [LOOPS] User data received:', user);
 
-  // Get the primary profile ID from user data - try multiple possible structures
+  // Get the primary profile ID from user data
   const primaryProfileId = 
-    user?.profiles?.find(p => p.is_primary)?.profile_id || 
+    user?.default_profile_id ||
+    user?.profiles?.find(p => p.is_default || p.is_primary)?.profile_id || 
     user?.profiles?.[0]?.profile_id ||
-    user?.profile_id ||
     user?.id ||
     null;
 
   console.log('🔍 [LOOPS] Primary profile ID:', primaryProfileId);
-
-  // Fetch profiles if we don't have profile ID from user data
-  const {
-    data: profilesData,
-    isLoading: profilesLoading,
-    error: profilesError
-  } = useQuery({
-    queryKey: ['profiles'],
-    queryFn: () => dotloopApi.getProfiles(),
-    enabled: !primaryProfileId && !!user,
-    retry: 1,
-  });
-
-  // Use profile from profiles API if needed
-  const effectiveProfileId = primaryProfileId || profilesData?.data?.find(p => p.is_primary)?.profile_id || profilesData?.data?.[0]?.profile_id;
-
-  console.log('🔍 [LOOPS] Effective profile ID:', effectiveProfileId);
+  console.log('🔍 [LOOPS] User object:', user);
 
   // Fetch loops
   const {
@@ -42,9 +26,9 @@ const LoopsDisplay = ({ user }) => {
     isLoading: loopsLoading,
     error: loopsError
   } = useQuery({
-    queryKey: ['loops', effectiveProfileId],
-    queryFn: () => dotloopApi.getLoops(effectiveProfileId),
-    enabled: !!effectiveProfileId,
+    queryKey: ['loops', primaryProfileId],
+    queryFn: () => dotloopApi.getLoops(primaryProfileId),
+    enabled: !!primaryProfileId,
     retry: 1,
   });
 
@@ -54,9 +38,9 @@ const LoopsDisplay = ({ user }) => {
     isLoading: detailsLoading,
     error: detailsError
   } = useQuery({
-    queryKey: ['loopDetails', effectiveProfileId, selectedLoop?.loop_id],
-    queryFn: () => dotloopApi.getLoopDetails(effectiveProfileId, selectedLoop.loop_id),
-    enabled: !!(effectiveProfileId && selectedLoop),
+    queryKey: ['loopDetails', primaryProfileId, selectedLoop?.loop_id],
+    queryFn: () => dotloopApi.getLoopDetails(primaryProfileId, selectedLoop.loop_id),
+    enabled: !!(primaryProfileId && selectedLoop),
     retry: 1,
   });
 
@@ -66,9 +50,9 @@ const LoopsDisplay = ({ user }) => {
     isLoading: foldersLoading,
     error: foldersError
   } = useQuery({
-    queryKey: ['folders', effectiveProfileId, expandedLoop?.loop_id],
-    queryFn: () => dotloopApi.getFolders(effectiveProfileId, expandedLoop.loop_id),
-    enabled: !!(effectiveProfileId && expandedLoop),
+    queryKey: ['folders', primaryProfileId, expandedLoop?.loop_id],
+    queryFn: () => dotloopApi.getFolders(primaryProfileId, expandedLoop.loop_id),
+    enabled: !!(primaryProfileId && expandedLoop),
     retry: 1,
   });
 
@@ -90,23 +74,12 @@ const LoopsDisplay = ({ user }) => {
     }).format(amount);
   };
 
-  if (profilesLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="text-gray-600">Loading profiles...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!effectiveProfileId) {
+  if (!primaryProfileId) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <p className="text-red-600">No profile found for user</p>
         <p className="text-red-500 text-sm mt-2">
-          Debug: profilesData={profilesData ? 'exists' : 'null'}, profilesError={profilesError?.message}
+          Debug: user={user ? 'exists' : 'null'}, profiles count={user?.profiles?.length || 0}
         </p>
       </div>
     );
@@ -263,7 +236,7 @@ const LoopsDisplay = ({ user }) => {
                         <FolderDocuments 
                           key={folder.folder_id}
                           folder={folder}
-                          profileId={effectiveProfileId}
+                          profileId={primaryProfileId}
                           loopId={loop.loop_id}
                         />
                       ))}
