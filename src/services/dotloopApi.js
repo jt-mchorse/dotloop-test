@@ -86,37 +86,18 @@ class DotloopApiService {
   async exchangeCodeForToken(code) {
     console.log("🔄 [TOKEN] Starting code exchange for token...");
     console.log("🔄 [TOKEN] Authorization code:", code ? "✅ Received" : "❌ Missing");
-    console.log("🔄 [TOKEN] Client ID:", CLIENT_ID ? "✅ Set" : "❌ Missing");
-    console.log("🔄 [TOKEN] Client Secret:", CLIENT_SECRET ? "✅ Set" : "❌ Missing");
-    console.log("🔄 [TOKEN] Redirect URI:", REDIRECT_URI);
-    console.log("🔄 [TOKEN] Using CORS proxy:", USE_CORS_PROXY ? "✅ Yes" : "❌ No");
+    console.log("🔄 [TOKEN] Using serverless function for token exchange");
 
     try {
-      const credentials = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
-      console.log("🔄 [TOKEN] Basic auth credentials:", credentials ? "✅ Generated" : "❌ Failed");
-
-      const tokenUrl = USE_CORS_PROXY ? `${CORS_PROXY}${DOTLOOP_AUTH}/oauth/token` : `${DOTLOOP_AUTH}/oauth/token`;
-      console.log("🔄 [TOKEN] Making POST request to:", tokenUrl);
-      console.log("🔄 [TOKEN] Request payload:", {
-        grant_type: "authorization_code",
+      // Use our serverless function instead of direct API call
+      const response = await axios.post('/api/oauth/token', {
         code: code,
         redirect_uri: REDIRECT_URI,
-      });
-
-      const response = await axios.post(
-        tokenUrl,
-        {
-          grant_type: "authorization_code",
-          code: code,
-          redirect_uri: REDIRECT_URI,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          headers: {
-            Authorization: `Basic ${credentials}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
+      });
 
       console.log("✅ [TOKEN] Token exchange successful!");
       console.log("✅ [TOKEN] Response status:", response.status);
@@ -134,7 +115,6 @@ class DotloopApiService {
       console.error("❌ [TOKEN] Error message:", error.message);
       console.error("❌ [TOKEN] Error response status:", error.response?.status);
       console.error("❌ [TOKEN] Error response data:", error.response?.data);
-      console.error("❌ [TOKEN] Error response headers:", error.response?.headers);
       console.error("❌ [TOKEN] Full error object:", error);
       throw error;
     }
