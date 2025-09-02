@@ -3,22 +3,26 @@ import { useQuery } from '@tanstack/react-query';
 import dotloopApi from '../services/dotloopApi';
 import FolderDocuments from './FolderDocuments';
 
-const LoopsDisplay = ({ user }) => {
+const LoopsDisplay = () => {
   const [selectedLoop, setSelectedLoop] = useState(null);
   const [expandedLoop, setExpandedLoop] = useState(null);
 
-  console.log('🔍 [LOOPS] User data received:', user);
+  // Fetch profiles first to get profile ID
+  const {
+    data: profilesData,
+    isLoading: profilesLoading,
+    error: profilesError
+  } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: () => dotloopApi.getProfiles(),
+    retry: 1,
+  });
 
-  // Get the primary profile ID from user data
-  const primaryProfileId = 
-    user?.default_profile_id ||
-    user?.profiles?.find(p => p.is_default || p.is_primary)?.profile_id || 
-    user?.profiles?.[0]?.profile_id ||
-    user?.id ||
-    null;
+  // Get the primary profile ID from profiles data
+  const primaryProfileId = profilesData?.data?.find(p => p.is_default)?.profile_id || profilesData?.data?.[0]?.profile_id;
 
+  console.log('🔍 [LOOPS] Profiles data:', profilesData);
   console.log('🔍 [LOOPS] Primary profile ID:', primaryProfileId);
-  console.log('🔍 [LOOPS] User object:', user);
 
   // Fetch loops
   const {
@@ -74,12 +78,34 @@ const LoopsDisplay = ({ user }) => {
     }).format(amount);
   };
 
+  if (profilesLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <span className="text-gray-600">Loading profiles...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (profilesError) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600">Error loading profiles</p>
+        <p className="text-red-500 text-sm mt-2">
+          {profilesError.response?.data?.message || profilesError.message}
+        </p>
+      </div>
+    );
+  }
+
   if (!primaryProfileId) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-600">No profile found for user</p>
+        <p className="text-red-600">No profile found</p>
         <p className="text-red-500 text-sm mt-2">
-          Debug: user={user ? 'exists' : 'null'}, profiles count={user?.profiles?.length || 0}
+          Debug: profiles count={profilesData?.data?.length || 0}
         </p>
       </div>
     );

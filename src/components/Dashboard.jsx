@@ -4,9 +4,9 @@ import dotloopApi from '../services/dotloopApi';
 import LoopsDisplay from './LoopsDisplay';
 
 const Dashboard = () => {
-  const { user, logout, isAuthenticated, isLoading } = useDotloopAuth();
+  const { logout, isAuthenticated, isLoading } = useDotloopAuth();
   
-  console.log('🔍 [DASHBOARD] Render state:', { user, isAuthenticated, isLoading });
+  console.log('🔍 [DASHBOARD] Render state:', { isAuthenticated, isLoading });
   const [profiles, setProfiles] = useState([]);
   const [loops, setLoops] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -35,12 +35,12 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (isAuthenticated) {
       fetchData(dotloopApi.getProfiles, setProfiles, 'profiles');
       fetchData(dotloopApi.getContacts, setContacts, 'contacts');
       fetchData(dotloopApi.getTemplates, setTemplates, 'templates');
     }
-  }, [user]);
+  }, [isAuthenticated]);
 
   const DataCard = ({ title, data, loading, error }) => (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -82,14 +82,14 @@ const Dashboard = () => {
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">Not authenticated</h2>
           <p className="text-gray-600">Please log in to access the dashboard</p>
           <div className="mt-4 text-xs text-gray-500">
-            Debug: isAuthenticated={isAuthenticated ? 'true' : 'false'}, user={user ? 'exists' : 'null'}
+            Debug: isAuthenticated={isAuthenticated ? 'true' : 'false'}
           </div>
         </div>
       </div>
@@ -105,7 +105,7 @@ const Dashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Dotloop Dashboard</h1>
               <p className="text-sm text-gray-600">
-                Welcome, {user.attributes?.name || user.attributes?.email || 'User'}
+                Welcome! Authenticated with Dotloop API
               </p>
             </div>
             <button
@@ -126,25 +126,20 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Account Info */}
+        {/* Authentication Info */}
         <div className="mb-8 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Account Information</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Authentication Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm font-medium text-gray-500">Account ID</p>
-              <p className="text-sm text-gray-900">{user.id}</p>
+              <p className="text-sm font-medium text-gray-500">Status</p>
+              <p className="text-sm text-gray-900 flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                Authenticated
+              </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Name</p>
-              <p className="text-sm text-gray-900">{user.attributes?.name || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Email</p>
-              <p className="text-sm text-gray-900">{user.attributes?.email || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Type</p>
-              <p className="text-sm text-gray-900">{user.type}</p>
+              <p className="text-sm font-medium text-gray-500">Token Status</p>
+              <p className="text-sm text-gray-900">Valid</p>
             </div>
           </div>
         </div>
@@ -191,7 +186,7 @@ const Dashboard = () => {
 
         {/* Comprehensive Loops Display */}
         <div className="mb-8">
-          <LoopsDisplay user={user} />
+          <LoopsDisplay />
         </div>
 
         {/* Quick Data Overview */}
@@ -262,10 +257,10 @@ const Dashboard = () => {
               Refresh Templates
             </button>
             <button
-              onClick={() => console.log('User data:', user)}
+              onClick={() => console.log('Authentication state:', { isAuthenticated, isLoading })}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
-              Debug User Data
+              Debug Auth State
             </button>
           </div>
         </div>
