@@ -32,8 +32,35 @@ class DotloopApiClient {
     this.refreshToken = null;
     this.tokenExpiry = null;
     
+    // Bind all methods to maintain 'this' context
+    this.loadTokens = this.loadTokens.bind(this);
+    this.saveTokens = this.saveTokens.bind(this);
+    this.clearTokens = this.clearTokens.bind(this);
+    this.isTokenValid = this.isTokenValid.bind(this);
+    this.getAuthUrl = this.getAuthUrl.bind(this);
+    this.exchangeCodeForToken = this.exchangeCodeForToken.bind(this);
+    this.refreshAccessToken = this.refreshAccessToken.bind(this);
+    this.makeRequest = this.makeRequest.bind(this);
+    this.getAccount = this.getAccount.bind(this);
+    this.getProfiles = this.getProfiles.bind(this);
+    this.getProfile = this.getProfile.bind(this);
+    this.getLoops = this.getLoops.bind(this);
+    this.getLoop = this.getLoop.bind(this);
+    this.getLoopDetails = this.getLoopDetails.bind(this);
+    this.getFolders = this.getFolders.bind(this);
+    this.getFolder = this.getFolder.bind(this);
+    this.getDocuments = this.getDocuments.bind(this);
+    this.getDocument = this.getDocument.bind(this);
+    this.getContacts = this.getContacts.bind(this);
+    this.getContact = this.getContact.bind(this);
+    this.getTemplates = this.getTemplates.bind(this);
+    this.getTemplate = this.getTemplate.bind(this);
+    
     // Load tokens from localStorage on client-side
     this.loadTokens();
+    
+    console.log('✅ [API] DotloopApiClient methods bound and initialized');
+    console.log('🔍 [API] makeRequest method:', typeof this.makeRequest);
   }
 
   /* ---------------- Token Management ---------------- */
