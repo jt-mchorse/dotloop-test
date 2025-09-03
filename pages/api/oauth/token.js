@@ -24,15 +24,15 @@ export default async function handler(req, res) {
 
   try {
     // Get environment variables (these should be set in Vercel dashboard)
-    const CLIENT_ID = process.env.VITE_DOTLOOP_CLIENT_ID;
-    const CLIENT_SECRET = process.env.VITE_DOTLOOP_CLIENT_SECRET;
-    const DOTLOOP_AUTH = process.env.VITE_DOTLOOP_AUTH_URL || "https://auth.dotloop.com";
+    const CLIENT_ID = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_ID;
+    const CLIENT_SECRET = process.env.DOTLOOP_CLIENT_SECRET; // Keep secret on server-side only
+    const DOTLOOP_AUTH = process.env.NEXT_PUBLIC_DOTLOOP_AUTH_URL || "https://auth.dotloop.com";
 
     console.log('🔐 [OAUTH] Environment check:', {
       CLIENT_ID: CLIENT_ID ? '✅ Set' : '❌ Missing',
       CLIENT_SECRET: CLIENT_SECRET ? '✅ Set' : '❌ Missing',
       DOTLOOP_AUTH,
-      redirect_uri: redirect_uri || process.env.VITE_REDIRECT_URI
+      redirect_uri: redirect_uri || process.env.NEXT_PUBLIC_REDIRECT_URI
     });
 
     if (!CLIENT_ID || !CLIENT_SECRET) {
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     const requestBody = new URLSearchParams({
       grant_type: 'authorization_code',
       code: code,
-      redirect_uri: redirect_uri || process.env.VITE_REDIRECT_URI
+      redirect_uri: redirect_uri || process.env.NEXT_PUBLIC_REDIRECT_URI
     });
 
     console.log('🔐 [OAUTH] Token URL:', tokenUrl);

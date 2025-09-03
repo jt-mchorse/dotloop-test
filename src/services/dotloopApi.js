@@ -1,11 +1,11 @@
 import axios from "axios";
 
 /* ---------------- Dotloop constants ---------------- */
-const DOTLOOP_AUTH = process.env.NEXT_PUBLIC_DOTLOOP_AUTH_URL || process.env.VITE_DOTLOOP_AUTH_URL || "https://auth.dotloop.com";
-const DOTLOOP_API = process.env.NEXT_PUBLIC_DOTLOOP_API_URL || process.env.VITE_DOTLOOP_API_URL || "https://api-gateway.dotloop.com/public/v2";
-const CLIENT_ID = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_ID || process.env.VITE_DOTLOOP_CLIENT_ID;
-const CLIENT_SECRET = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_SECRET || process.env.VITE_DOTLOOP_CLIENT_SECRET;
-const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || process.env.VITE_REDIRECT_URI || "http://localhost:3000/oauth-callback";
+const DOTLOOP_AUTH = process.env.NEXT_PUBLIC_DOTLOOP_AUTH_URL || "https://auth.dotloop.com";
+const DOTLOOP_API = process.env.NEXT_PUBLIC_DOTLOOP_API_URL || "https://api-gateway.dotloop.com/public/v2";
+const CLIENT_ID = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_ID;
+// CLIENT_SECRET is only used server-side in API routes, not exposed to client
+const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || "http://localhost:3000/callback";
 const SCOPES = [
   "account:read", // ✅ Account details
   "profile:read", // ✅ Profile information

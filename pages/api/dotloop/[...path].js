@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const DOTLOOP_API = process.env.VITE_DOTLOOP_API_URL || "https://api-gateway.dotloop.com/public/v2";
+    const DOTLOOP_API = process.env.NEXT_PUBLIC_DOTLOOP_API_URL || "https://api-gateway.dotloop.com/public/v2";
     const url = `${DOTLOOP_API}/${apiPath}`;
     
     console.log('🌐 [PROXY] Target URL:', url);
