@@ -26,10 +26,7 @@ export default async function handler(req, res) {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+        'Accept': 'application/json'
       }
     };
 
@@ -59,12 +56,6 @@ export default async function handler(req, res) {
     }
 
     console.log('Dotloop API request successful');
-    
-    // Set cache-busting headers for the response
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
     res.status(200).json(data);
 
   } catch (error) {

@@ -14,7 +14,9 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
     queryKey: ['documents', profileId, loopId, folder.folder_id],
     queryFn: () => dotloopApi.getDocuments(profileId, loopId, folder.folder_id),
     enabled: isExpanded,
-    retry: 1,
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   const formatDate = (dateString) => {

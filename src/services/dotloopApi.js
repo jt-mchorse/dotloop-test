@@ -181,12 +181,7 @@ class DotloopApiService {
 
   // API request helper - now uses serverless proxy
   async makeRequest(endpoint, options = {}) {
-    console.log("🔄 [API] makeRequest called:", { endpoint, options, this: this });
-    console.log("🔄 [API] this context:", { 
-      accessToken: this?.accessToken ? "exists" : "missing",
-      refreshToken: this?.refreshToken ? "exists" : "missing",
-      isTokenValid: typeof this?.isTokenValid
-    });
+    console.log("🔄 [API] makeRequest called:", { endpoint, options });
 
     if (!this.isTokenValid()) {
       console.log("❌ [API] Token is not valid");
@@ -200,7 +195,13 @@ class DotloopApiService {
     }
 
     // Remove leading slash from endpoint if present
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    let cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    
+    // Add cache-busting parameter for GET requests to avoid 304
+    if (options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'PATCH' && options.method !== 'DELETE') {
+      const separator = cleanEndpoint.includes('?') ? '&' : '?';
+      cleanEndpoint += `${separator}_t=${Date.now()}`;
+    }
 
     const config = {
       method: options.method || 'GET',

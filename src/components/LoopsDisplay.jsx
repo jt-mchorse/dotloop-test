@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dotloopApi from '../services/dotloopApi';
 import FolderDocuments from './FolderDocuments';
 
@@ -8,6 +8,7 @@ console.log('📥 [LOOPS] dotloopApi imported:', dotloopApi);
 const LoopsDisplay = () => {
   const [selectedLoop, setSelectedLoop] = useState(null);
   const [expandedLoop, setExpandedLoop] = useState(null);
+  const queryClient = useQueryClient();
 
   // Fetch profiles first to get profile ID
   const {
@@ -15,13 +16,13 @@ const LoopsDisplay = () => {
     isLoading: profilesLoading,
     error: profilesError
   } = useQuery({
-    queryKey: ['profiles', Date.now()], // Add timestamp to prevent caching
+    queryKey: ['profiles'],
     queryFn: () => dotloopApi.getProfiles(),
-    retry: 1,
+    retry: false, // Disable retries to prevent infinite calls
     refetchOnWindowFocus: false,
-    refetchOnMount: 'always',
-    staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache
+    refetchOnMount: false, // Only fetch once
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Get the primary profile ID from profiles data
@@ -48,17 +49,17 @@ const LoopsDisplay = () => {
     isLoading: loopsLoading,
     error: loopsError
   } = useQuery({
-    queryKey: ['loops', primaryProfileId, Date.now()], // Add timestamp to prevent caching
+    queryKey: ['loops', primaryProfileId],
     queryFn: () => {
       console.log('🚀 [LOOPS] Fetching loops for profile ID:', primaryProfileId);
       return dotloopApi.getLoops(primaryProfileId);
     },
     enabled: !!primaryProfileId,
-    retry: 1,
+    retry: false, // Disable retries to prevent infinite calls
     refetchOnWindowFocus: false,
-    refetchOnMount: 'always',
-    staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache
+    refetchOnMount: false, // Only fetch once
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
     onSuccess: (data) => {
       console.log('✅ [LOOPS] Loops data received:', data);
       console.log('✅ [LOOPS] Number of loops:', data?.data?.length);
@@ -88,7 +89,9 @@ const LoopsDisplay = () => {
     queryKey: ['loopDetails', primaryProfileId, selectedLoop?.loop_id],
     queryFn: () => dotloopApi.getLoopDetails(primaryProfileId, selectedLoop.loop_id),
     enabled: !!(primaryProfileId && selectedLoop),
-    retry: 1,
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch folders for expanded loop
@@ -100,7 +103,9 @@ const LoopsDisplay = () => {
     queryKey: ['folders', primaryProfileId, expandedLoop?.loop_id],
     queryFn: () => dotloopApi.getFolders(primaryProfileId, expandedLoop.loop_id),
     enabled: !!(primaryProfileId && expandedLoop),
-    retry: 1,
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleLoopClick = (loop) => {
@@ -181,10 +186,21 @@ const LoopsDisplay = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-900">
             Your Loops ({loops.length})
           </h2>
+          <button
+            onClick={() => {
+              queryClient.invalidateQueries(['profiles']);
+              queryClient.invalidateQueries(['loops']);
+              queryClient.invalidateQueries(['folders']);
+              queryClient.invalidateQueries(['documents']);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium"
+          >
+            Refresh Loops
+          </button>
         </div>
 
         <div className="divide-y divide-gray-200">
