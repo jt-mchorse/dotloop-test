@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import dotloopApi from '../services/dotloopApi';
+import dotloopApi from '../services/dotloopApiClient';
 import FolderDocuments from './FolderDocuments';
 
-console.log('📥 [LOOPS] dotloopApi imported:', dotloopApi);
+console.log('📥 [LOOPS] DotloopApiClient imported');
 
 const LoopsDisplay = () => {
   const [selectedLoop, setSelectedLoop] = useState(null);

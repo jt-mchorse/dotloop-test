@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import dotloopApi from '../services/dotloopApi';
+import dotloopApi from '../services/dotloopApiClient';
 
 const FolderDocuments = ({ folder, profileId, loopId }) => {
   const [isExpanded, setIsExpanded] = useState(false);

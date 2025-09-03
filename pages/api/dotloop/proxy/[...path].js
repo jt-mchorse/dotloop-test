@@ -1,4 +1,8 @@
-// Next.js API route for proxying Dotloop API requests with comprehensive logging
+/**
+ * Dotloop API Proxy Endpoint
+ * Secure proxy for authenticated Dotloop API requests
+ * Following Dotloop API v2 guidelines and Next.js security best practices
+ */
 
 export default async function handler(req, res) {
   const startTime = Date.now();
@@ -8,19 +12,9 @@ export default async function handler(req, res) {
   const { path } = req.query;
   const apiPath = Array.isArray(path) ? path.join('/') : path;
   
-  console.log(`\n🌐 [${timestamp}] Dotloop API Proxy Request`);
+  console.log(`\n🌐 [${timestamp}] Dotloop API Proxy`);
   console.log('🌐 [PROXY] Method:', req.method);
   console.log('🌐 [PROXY] API Path:', apiPath);
-  console.log('🌐 [PROXY] Query:', JSON.stringify(req.query, null, 2));
-  console.log('🌐 [PROXY] Headers:', JSON.stringify({
-    authorization: req.headers.authorization ? '✅ Present' : '❌ Missing',
-    'content-type': req.headers['content-type'],
-    'user-agent': req.headers['user-agent']
-  }, null, 2));
-  
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log('🌐 [PROXY] Body:', JSON.stringify(req.body, null, 2));
-  }
   
   // Get authorization header from client
   const authHeader = req.headers.authorization;
@@ -28,20 +22,19 @@ export default async function handler(req, res) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.log('❌ [PROXY] Missing or invalid authorization header');
     return res.status(401).json({ 
-      error: 'Authorization header required',
-      expected: 'Bearer <token>',
-      received: authHeader ? 'Invalid format' : 'Missing',
-      timestamp
+      error: 'Authorization required',
+      message: 'Bearer token must be provided in Authorization header',
+      format: 'Authorization: Bearer <access_token>'
     });
   }
 
   try {
-    const DOTLOOP_API = process.env.NEXT_PUBLIC_DOTLOOP_API_URL || "https://api-gateway.dotloop.com/public/v2";
+    const DOTLOOP_API = process.env.NEXT_PUBLIC_DOTLOOP_API_URL || 'https://api-gateway.dotloop.com/public/v2';
     const url = `${DOTLOOP_API}/${apiPath}`;
     
     console.log('🌐 [PROXY] Target URL:', url);
 
-    // Forward the request to Dotloop API
+    // Prepare request options following Dotloop API guidelines
     const fetchOptions = {
       method: req.method,
       headers: {
@@ -53,66 +46,79 @@ export default async function handler(req, res) {
     };
 
     // Add body for POST/PUT/PATCH requests
-    if (req.method !== 'GET' && req.method !== 'DELETE') {
-      if (req.body) {
-        fetchOptions.body = JSON.stringify(req.body);
-        console.log('🌐 [PROXY] Request body added for', req.method, 'request');
-      }
+    if (req.method !== 'GET' && req.method !== 'DELETE' && req.body) {
+      fetchOptions.body = JSON.stringify(req.body);
+      console.log('🌐 [PROXY] Request body added for', req.method, 'request');
     }
 
     // Add query parameters if they exist (excluding the 'path' parameter)
     const queryParams = new URLSearchParams();
     Object.keys(req.query).forEach(key => {
       if (key !== 'path') {
-        queryParams.append(key, req.query[key]);
+        const value = req.query[key];
+        if (Array.isArray(value)) {
+          value.forEach(v => queryParams.append(key, v));
+        } else {
+          queryParams.append(key, value);
+        }
       }
     });
     
     const finalUrl = queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
-    console.log('🌐 [PROXY] Final URL with query params:', finalUrl);
+    console.log('🌐 [PROXY] Final URL:', finalUrl);
 
     console.log('🌐 [PROXY] Making request to Dotloop API...');
     const response = await fetch(finalUrl, fetchOptions);
     
     const responseTime = Date.now() - startTime;
-    console.log(`🌐 [PROXY] Dotloop API response: ${response.status} ${response.statusText} (${responseTime}ms)`);
+    console.log(`🌐 [PROXY] Dotloop response: ${response.status} ${response.statusText} (${responseTime}ms)`);
+
+    // Handle different content types
+    const contentType = response.headers.get('content-type');
+    let data;
     
-    // Log response headers
-    const responseHeaders = {};
-    response.headers.forEach((value, key) => {
-      responseHeaders[key] = value;
-    });
-    console.log('🌐 [PROXY] Response headers:', JSON.stringify(responseHeaders, null, 2));
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
 
-    const data = await response.json();
-
+    // Log response details (without sensitive data)
     if (!response.ok) {
       console.error('❌ [PROXY] Dotloop API error:', {
         status: response.status,
         statusText: response.statusText,
-        data,
+        contentType,
+        dataPreview: typeof data === 'string' ? data.substring(0, 200) : 'JSON object',
         responseTime: `${responseTime}ms`,
         url: finalUrl
       });
-      return res.status(response.status).json(data);
+      
+      return res.status(response.status).json({
+        error: 'Dotloop API error',
+        status: response.status,
+        statusText: response.statusText,
+        details: data
+      });
     }
 
     console.log('✅ [PROXY] Dotloop API request successful:', {
       status: response.status,
-      dataSize: JSON.stringify(data).length,
+      contentType,
       responseTime: `${responseTime}ms`,
-      hasData: !!data,
-      dataKeys: data && typeof data === 'object' ? Object.keys(data) : 'Not an object'
+      hasData: !!data
     });
 
-    console.log('🌐 [PROXY] Sending successful response to client');
-    console.log('─'.repeat(80));
+    // Set appropriate content type for response
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
 
-    res.status(200).json(data);
+    res.status(response.status).send(data);
 
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    console.error('❌ [PROXY] Proxy error:', {
+    console.error('❌ [PROXY] Server error:', {
       message: error.message,
       stack: error.stack,
       responseTime: `${responseTime}ms`,
@@ -122,9 +128,9 @@ export default async function handler(req, res) {
     
     res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
-      apiPath,
-      timestamp
+      message: 'Failed to proxy request to Dotloop API',
+      details: error.message,
+      apiPath
     });
   }
 }

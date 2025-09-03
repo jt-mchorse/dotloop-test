@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import dotloopApi from "../services/dotloopApi";
+import dotloopApi from "../services/dotloopApiClient";
 
-console.log('📥 [HOOK] dotloopApi imported:', dotloopApi);
+console.log('📥 [HOOK] DotloopApiClient imported');
 
 export const useDotloopAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -64,7 +64,7 @@ export const useDotloopAuth = () => {
       setError(null);
 
       console.log("🔄 [HOOK] Exchanging code for token...");
-      await dotloopApi.exchangeCodeForToken(code);
+      await dotloopApi.exchangeCodeForToken(code, state);
       console.log("✅ [HOOK] Token exchange successful");
 
       setIsAuthenticated(true);

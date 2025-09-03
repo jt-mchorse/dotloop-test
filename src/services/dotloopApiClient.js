@@ -1,0 +1,285 @@
+/**
+ * Dotloop API Client for Next.js
+ * Follows Dotloop API v2 guidelines and Next.js security best practices
+ * 
+ * Security features:
+ * - Client secrets kept server-side only
+ * - Access tokens managed securely
+ * - Automatic token refresh handling
+ * - Proper error handling for 401 Unauthorized
+ */
+
+import axios from 'axios';
+
+/* ---------------- Dotloop Client Configuration ---------------- */
+const DOTLOOP_AUTH = process.env.NEXT_PUBLIC_DOTLOOP_AUTH_URL || 'https://auth.dotloop.com';
+const CLIENT_ID = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_ID;
+const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || 'http://localhost:3000/callback';
+
+// OAuth 2.0 Scopes as per Dotloop API guidelines
+const SCOPES = [
+  'account:read',    // Account details
+  'profile:read',    // Profile information  
+  'loop:read',       // Loop information, details, folders, documents, participants, tasks, activities
+  'contact:read',    // Contact information
+  'template:read',   // Loop templates
+];
+
+class DotloopApiClient {
+  constructor() {
+    console.log('🏗️ [API] DotloopApiClient initialized');
+    this.accessToken = null;
+    this.refreshToken = null;
+    this.tokenExpiry = null;
+    
+    // Load tokens from localStorage on client-side
+    this.loadTokens();
+  }
+
+  /* ---------------- Token Management ---------------- */
+  
+  loadTokens() {
+    if (typeof window !== 'undefined') {
+      console.log('📦 [TOKENS] Loading tokens from localStorage...');
+      const tokens = localStorage.getItem('dotloop_tokens');
+      if (tokens) {
+        const { accessToken, refreshToken, tokenExpiry } = JSON.parse(tokens);
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.tokenExpiry = tokenExpiry;
+        console.log('✅ [TOKENS] Tokens loaded successfully');
+      }
+    }
+  }
+
+  saveTokens(accessToken, refreshToken, expiresIn) {
+    this.accessToken = accessToken;
+    this.refreshToken = refreshToken;
+    this.tokenExpiry = Date.now() + (expiresIn * 1000);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dotloop_tokens', JSON.stringify({
+        accessToken,
+        refreshToken,
+        tokenExpiry: this.tokenExpiry,
+      }));
+      console.log('💾 [TOKENS] Tokens saved to localStorage');
+    }
+  }
+
+  clearTokens() {
+    this.accessToken = null;
+    this.refreshToken = null;
+    this.tokenExpiry = null;
+    
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('dotloop_tokens');
+      console.log('🗑️ [TOKENS] Tokens cleared from localStorage');
+    }
+  }
+
+  isTokenValid() {
+    const valid = this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry;
+    console.log('🔍 [TOKENS] Token validity check:', valid ? '✅ Valid' : '❌ Invalid/Expired');
+    return valid;
+  }
+
+  /* ---------------- OAuth 2.0 Authentication ---------------- */
+
+  getAuthUrl(state = null) {
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: CLIENT_ID,
+      redirect_uri: REDIRECT_URI,
+      scope: SCOPES.join(' '),
+    });
+
+    if (state) {
+      params.append('state', state);
+    }
+
+    const authUrl = `${DOTLOOP_AUTH}/oauth/authorize?${params.toString()}`;
+    console.log('🔗 [AUTH] Generated authorization URL');
+    return authUrl;
+  }
+
+  async exchangeCodeForToken(code, state) {
+    console.log('🔄 [AUTH] Starting OAuth code exchange...');
+    
+    try {
+      const response = await axios.post('/api/dotloop/auth/token', {
+        code,
+        state,
+        redirect_uri: REDIRECT_URI,
+      });
+
+      const { access_token, refresh_token, expires_in } = response.data;
+      this.saveTokens(access_token, refresh_token, expires_in);
+      
+      console.log('✅ [AUTH] Token exchange successful');
+      return response.data;
+    } catch (error) {
+      console.error('❌ [AUTH] Token exchange failed:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  async refreshAccessToken() {
+    if (!this.refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    console.log('🔄 [TOKENS] Refreshing access token...');
+    
+    try {
+      const response = await axios.post('/api/dotloop/auth/refresh', {
+        refresh_token: this.refreshToken,
+      });
+
+      const { access_token, refresh_token, expires_in } = response.data;
+      this.saveTokens(access_token, refresh_token || this.refreshToken, expires_in);
+      
+      console.log('✅ [TOKENS] Token refreshed successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ [TOKENS] Token refresh failed:', error.response?.data || error.message);
+      this.clearTokens(); // Clear invalid tokens
+      throw error;
+    }
+  }
+
+  /* ---------------- API Request Methods ---------------- */
+
+  async makeRequest(endpoint, options = {}) {
+    console.log('🌐 [API] Making request to:', endpoint);
+
+    // Ensure we have a valid token
+    if (!this.isTokenValid()) {
+      if (this.refreshToken) {
+        await this.refreshAccessToken();
+      } else {
+        throw new Error('Authentication required - no valid token available');
+      }
+    }
+
+    const config = {
+      method: options.method || 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await axios(`/api/dotloop/proxy${endpoint}`, config);
+      console.log('✅ [API] Request successful:', endpoint);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        console.log('🔄 [API] 401 received, attempting token refresh...');
+        
+        try {
+          await this.refreshAccessToken();
+          config.headers.Authorization = `Bearer ${this.accessToken}`;
+          const retryResponse = await axios(`/api/dotloop/proxy${endpoint}`, config);
+          console.log('✅ [API] Retry after refresh successful:', endpoint);
+          return retryResponse.data;
+        } catch (refreshError) {
+          console.error('❌ [API] Retry after refresh failed:', refreshError);
+          throw refreshError;
+        }
+      }
+      
+      console.error('❌ [API] Request failed:', endpoint, error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /* ---------------- Account & Profile API Methods ---------------- */
+
+  async getAccount() {
+    return this.makeRequest('/account');
+  }
+
+  async getProfiles() {
+    return this.makeRequest('/profile');
+  }
+
+  async getProfile(profileId) {
+    return this.makeRequest(`/profile/${profileId}`);
+  }
+
+  /* ---------------- Loop API Methods ---------------- */
+
+  async getLoops(profileId, params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const endpoint = queryParams 
+      ? `/profile/${profileId}/loop?${queryParams}` 
+      : `/profile/${profileId}/loop`;
+    return this.makeRequest(endpoint);
+  }
+
+  async getLoop(profileId, loopId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}`);
+  }
+
+  async getLoopDetails(profileId, loopId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/detail`);
+  }
+
+  /* ---------------- Folder API Methods ---------------- */
+
+  async getFolders(profileId, loopId, params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const endpoint = queryParams 
+      ? `/profile/${profileId}/loop/${loopId}/folder?${queryParams}`
+      : `/profile/${profileId}/loop/${loopId}/folder`;
+    return this.makeRequest(endpoint);
+  }
+
+  async getFolder(profileId, loopId, folderId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}`);
+  }
+
+  /* ---------------- Document API Methods ---------------- */
+
+  async getDocuments(profileId, loopId, folderId, params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const endpoint = queryParams 
+      ? `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document?${queryParams}`
+      : `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document`;
+    return this.makeRequest(endpoint);
+  }
+
+  async getDocument(profileId, loopId, folderId, documentId) {
+    return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`);
+  }
+
+  /* ---------------- Contact API Methods ---------------- */
+
+  async getContacts(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    const endpoint = queryParams ? `/contact?${queryParams}` : '/contact';
+    return this.makeRequest(endpoint);
+  }
+
+  async getContact(contactId) {
+    return this.makeRequest(`/contact/${contactId}`);
+  }
+
+  /* ---------------- Template API Methods ---------------- */
+
+  async getTemplates() {
+    return this.makeRequest('/template');
+  }
+
+  async getTemplate(templateId) {
+    return this.makeRequest(`/template/${templateId}`);
+  }
+}
+
+// Export singleton instance
+const dotloopApi = new DotloopApiClient();
+export default dotloopApi;

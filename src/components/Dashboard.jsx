@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useDotloopAuth } from '../hooks/useDotloopAuth';
-import dotloopApi from '../services/dotloopApi';
+import dotloopApi from '../services/dotloopApiClient';
 import LoopsDisplay from './LoopsDisplay';
 
-console.log('📥 [DASHBOARD] dotloopApi imported:', dotloopApi);
+console.log('📥 [DASHBOARD] DotloopApiClient imported');
 
 const Dashboard = () => {
   const { logout, isAuthenticated, isLoading } = useDotloopAuth();
