@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dotloopApi from '../services/dotloopApi';
 import FolderDocuments from './FolderDocuments';
@@ -15,16 +15,32 @@ const LoopsDisplay = () => {
     isLoading: profilesLoading,
     error: profilesError
   } = useQuery({
-    queryKey: ['profiles'],
+    queryKey: ['profiles', Date.now()], // Add timestamp to prevent caching
     queryFn: () => dotloopApi.getProfiles(),
     retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache
   });
 
   // Get the primary profile ID from profiles data
   const primaryProfileId = profilesData?.data?.find(p => p.is_default)?.profile_id || profilesData?.data?.[0]?.profile_id;
 
   console.log('🔍 [LOOPS] Profiles data:', profilesData);
-  console.log('🔍 [LOOPS] Primary profile ID:', primaryProfileId);
+  console.log('🔍 [LOOPS] Profiles raw data:', profilesData?.data);
+  console.log('🔍 [LOOPS] Number of profiles:', profilesData?.data?.length);
+  if (profilesData?.data?.length > 0) {
+    profilesData.data.forEach((profile, index) => {
+      console.log(`🔍 [LOOPS] Profile ${index}:`, {
+        profile_id: profile.profile_id,
+        name: profile.name,
+        is_default: profile.is_default,
+        type: profile.type
+      });
+    });
+  }
+  console.log('🔍 [LOOPS] Selected primary profile ID:', primaryProfileId);
 
   // Fetch loops
   const {
@@ -32,17 +48,42 @@ const LoopsDisplay = () => {
     isLoading: loopsLoading,
     error: loopsError
   } = useQuery({
-    queryKey: ['loops', primaryProfileId],
-    queryFn: () => dotloopApi.getLoops(primaryProfileId),
+    queryKey: ['loops', primaryProfileId, Date.now()], // Add timestamp to prevent caching
+    queryFn: () => {
+      console.log('🚀 [LOOPS] Fetching loops for profile ID:', primaryProfileId);
+      return dotloopApi.getLoops(primaryProfileId);
+    },
     enabled: !!primaryProfileId,
     retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache
+    onSuccess: (data) => {
+      console.log('✅ [LOOPS] Loops data received:', data);
+      console.log('✅ [LOOPS] Number of loops:', data?.data?.length);
+      if (data?.data?.length > 0) {
+        data.data.forEach((loop, index) => {
+          console.log(`✅ [LOOPS] Loop ${index}:`, {
+            loop_id: loop.loop_id,
+            loop_name: loop.loop_name,
+            status: loop.status,
+            created: loop.created,
+            updated: loop.updated
+          });
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('❌ [LOOPS] Error fetching loops:', error);
+      console.error('❌ [LOOPS] Error details:', error.response?.data);
+    }
   });
 
   // Fetch loop details for selected loop
   const {
     data: loopDetails,
-    isLoading: detailsLoading,
-    error: detailsError
+    isLoading: detailsLoading
   } = useQuery({
     queryKey: ['loopDetails', primaryProfileId, selectedLoop?.loop_id],
     queryFn: () => dotloopApi.getLoopDetails(primaryProfileId, selectedLoop.loop_id),

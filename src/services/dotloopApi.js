@@ -265,9 +265,13 @@ class DotloopApiService {
 
   // Loops API - Updated to use profile-based endpoints
   async getLoops(profileId, params = {}) {
+    console.log('🔄 [API] getLoops called with profileId:', profileId, 'params:', params);
     const queryParams = new URLSearchParams(params).toString();
     const endpoint = queryParams ? `/profile/${profileId}/loop?${queryParams}` : `/profile/${profileId}/loop`;
-    return this.makeRequest(endpoint);
+    console.log('🔄 [API] getLoops endpoint:', endpoint);
+    const result = await this.makeRequest(endpoint);
+    console.log('✅ [API] getLoops result:', result);
+    return result;
   }
 
   async getLoop(profileId, loopId) {

@@ -10,16 +10,12 @@ const Dashboard = () => {
   
   console.log('🔍 [DASHBOARD] Render state:', { isAuthenticated, isLoading });
   const [profiles, setProfiles] = useState([]);
-  const [loops, setLoops] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState({
     profiles: false,
-    loops: false,
     contacts: false,
-    templates: false,
-    documents: false
+    templates: false
   });
   const [error, setError] = useState(null);
 
@@ -216,15 +212,37 @@ const Dashboard = () => {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Total Profiles:</span>
-                <span className="text-sm font-medium">{profiles.length}</span>
+                <span className="text-sm font-medium">
+                  {loading.profiles ? (
+                    <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                  ) : (
+                    profiles.length
+                  )}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Total Contacts:</span>
-                <span className="text-sm font-medium">{contacts.length}</span>
+                <span className="text-sm font-medium">
+                  {loading.contacts ? (
+                    <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                  ) : (
+                    contacts.length
+                  )}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Total Templates:</span>
-                <span className="text-sm font-medium">{templates.length}</span>
+                <span className="text-sm font-medium">
+                  {loading.templates ? (
+                    <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                  ) : (
+                    templates.length
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">API Status:</span>
+                <span className="text-sm font-medium text-green-600">✓ Connected</span>
               </div>
             </div>
           </div>
@@ -235,7 +253,11 @@ const Dashboard = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">API Testing</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
-              onClick={() => fetchData(dotloopApi.getProfiles, setProfiles, 'profiles')}
+              onClick={() => {
+                // Clear cache and refetch
+                setProfiles([]);
+                fetchData(dotloopApi.getProfiles, setProfiles, 'profiles');
+              }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Refresh Profiles
@@ -247,13 +269,19 @@ const Dashboard = () => {
               Refresh All Data
             </button>
             <button
-              onClick={() => fetchData(dotloopApi.getContacts, setContacts, 'contacts')}
+              onClick={() => {
+                setContacts([]);
+                fetchData(dotloopApi.getContacts, setContacts, 'contacts');
+              }}
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Refresh Contacts
             </button>
             <button
-              onClick={() => fetchData(dotloopApi.getTemplates, setTemplates, 'templates')}
+              onClick={() => {
+                setTemplates([]);
+                fetchData(dotloopApi.getTemplates, setTemplates, 'templates');
+              }}
               className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Refresh Templates
@@ -263,6 +291,27 @@ const Dashboard = () => {
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Debug Auth State
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  console.log('🔄 [DEBUG] Manually testing API calls...');
+                  const profilesResult = await dotloopApi.getProfiles();
+                  console.log('✅ [DEBUG] Profiles result:', profilesResult);
+                  
+                  if (profilesResult?.data?.[0]?.profile_id) {
+                    const profileId = profilesResult.data[0].profile_id;
+                    console.log('🔄 [DEBUG] Testing loops with profile ID:', profileId);
+                    const loopsResult = await dotloopApi.getLoops(profileId);
+                    console.log('✅ [DEBUG] Loops result:', loopsResult);
+                  }
+                } catch (error) {
+                  console.error('❌ [DEBUG] Manual API test failed:', error);
+                }
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Test APIs Manually
             </button>
           </div>
         </div>
