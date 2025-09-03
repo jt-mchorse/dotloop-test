@@ -28,6 +28,30 @@ class DotloopApiService {
     this.refreshToken = null;
     this.tokenExpiry = null;
 
+    // Bind methods to maintain 'this' context
+    this.makeRequest = this.makeRequest.bind(this);
+    this.getAccount = this.getAccount.bind(this);
+    this.getProfiles = this.getProfiles.bind(this);
+    this.getProfile = this.getProfile.bind(this);
+    this.getLoops = this.getLoops.bind(this);
+    this.getLoop = this.getLoop.bind(this);
+    this.getLoopDetails = this.getLoopDetails.bind(this);
+    this.getFolders = this.getFolders.bind(this);
+    this.getFolder = this.getFolder.bind(this);
+    this.getDocuments = this.getDocuments.bind(this);
+    this.getDocument = this.getDocument.bind(this);
+    this.getContacts = this.getContacts.bind(this);
+    this.getContact = this.getContact.bind(this);
+    this.getTemplates = this.getTemplates.bind(this);
+    this.getTemplate = this.getTemplate.bind(this);
+    this.exchangeCodeForToken = this.exchangeCodeForToken.bind(this);
+    this.refreshAccessToken = this.refreshAccessToken.bind(this);
+    this.isTokenValid = this.isTokenValid.bind(this);
+    this.getAuthUrl = this.getAuthUrl.bind(this);
+    this.clearTokens = this.clearTokens.bind(this);
+    this.loadTokens = this.loadTokens.bind(this);
+    this.saveTokens = this.saveTokens.bind(this);
+
     // Load tokens from localStorage on initialization
     this.loadTokens();
     console.log("✅ [API] DotloopApiService initialized");
@@ -157,10 +181,20 @@ class DotloopApiService {
 
   // API request helper - now uses serverless proxy
   async makeRequest(endpoint, options = {}) {
+    console.log("🔄 [API] makeRequest called:", { endpoint, options, this: this });
+    console.log("🔄 [API] this context:", { 
+      accessToken: this?.accessToken ? "exists" : "missing",
+      refreshToken: this?.refreshToken ? "exists" : "missing",
+      isTokenValid: typeof this?.isTokenValid
+    });
+
     if (!this.isTokenValid()) {
+      console.log("❌ [API] Token is not valid");
       if (this.refreshToken) {
+        console.log("🔄 [API] Attempting to refresh token...");
         await this.refreshAccessToken();
       } else {
+        console.log("❌ [API] No refresh token available");
         throw new Error("No valid token available");
       }
     }
@@ -206,22 +240,24 @@ class DotloopApiService {
 
   // Profiles API
   async getProfiles() {
-    return this.makeRequest("/profiles");
+    console.log("🔄 [API] getProfiles called, this:", this);
+    console.log("🔄 [API] makeRequest method:", this.makeRequest);
+    return this.makeRequest("/profile");
   }
 
   async getProfile(profileId) {
-    return this.makeRequest(`/profiles/${profileId}`);
+    return this.makeRequest(`/profile/${profileId}`);
   }
 
   async createProfile(profileData) {
-    return this.makeRequest("/profiles", {
+    return this.makeRequest("/profile", {
       method: "POST",
       data: profileData,
     });
   }
 
   async updateProfile(profileId, profileData) {
-    return this.makeRequest(`/profiles/${profileId}`, {
+    return this.makeRequest(`/profile/${profileId}`, {
       method: "PATCH",
       data: profileData,
     });

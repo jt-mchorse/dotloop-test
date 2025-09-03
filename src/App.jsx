@@ -52,6 +52,31 @@ const PublicRoute = ({ children }) => {
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
 };
 
+// Auto-login component - checks authentication and redirects accordingly
+const AutoLogin = () => {
+  const { isAuthenticated, isLoading } = useDotloopAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait while we verify your login status</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If already authenticated, redirect to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  // If not authenticated, show login page
+  return <LoginPage />;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -60,6 +85,10 @@ function App() {
           <Routes>
             <Route 
               path="/" 
+              element={<AutoLogin />} 
+            />
+            <Route 
+              path="/login" 
               element={
                 <PublicRoute>
                   <LoginPage />
