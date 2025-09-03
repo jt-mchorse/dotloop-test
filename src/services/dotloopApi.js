@@ -9,11 +9,11 @@ const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || "http://localhost:5173
 const SCOPES = [
   "account:read", // ✅ Account details
   "profile:read", // ✅ Profile information
-  "profile:write", // ✅ Create and update profiles  
+  // "profile:write", // ❌ Create and update profiles (commented out - requires special access)
   "loop:read", // ✅ Loop information, details, folders, documents, participants, tasks, activities
-  "loop:write", // ✅ Create and update loops, details, folders, documents, participants
+  // "loop:write", // ❌ Create and update loops, details, folders, documents, participants (commented out - requires special access)
   "contact:read", // ✅ Contact information
-  "contact:write", // ✅ Create, update, delete contacts
+  // "contact:write", // ❌ Create, update, delete contacts (commented out - requires special access)
   "template:read", // ✅ Loop templates
 ];
 
