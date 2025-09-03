@@ -3,6 +3,8 @@ import { useDotloopAuth } from '../hooks/useDotloopAuth';
 import dotloopApi from '../services/dotloopApi';
 import LoopsDisplay from './LoopsDisplay';
 
+console.log('📥 [DASHBOARD] dotloopApi imported:', dotloopApi);
+
 const Dashboard = () => {
   const { logout, isAuthenticated, isLoading } = useDotloopAuth();
   

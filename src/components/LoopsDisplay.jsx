@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import dotloopApi from '../services/dotloopApi';
 import FolderDocuments from './FolderDocuments';
 
+console.log('📥 [LOOPS] dotloopApi imported:', dotloopApi);
+
 const LoopsDisplay = () => {
   const [selectedLoop, setSelectedLoop] = useState(null);
   const [expandedLoop, setExpandedLoop] = useState(null);

@@ -7,12 +7,14 @@ const CLIENT_ID = import.meta.env.VITE_DOTLOOP_CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.VITE_DOTLOOP_CLIENT_SECRET;
 const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || "http://localhost:5173/callback";
 const SCOPES = [
-  "account:read", // ✅ Account stats and info
-  "profile:read", // ✅ User profile data
-  "loop:read", // ✅ List and view loops (includes documents)
-  "contact:read", // ✅ List and view contacts
-  "template:read", // ✅ List and view templates
-  "admin:read", // ✅ Administrative data
+  "account:read", // ✅ Account details
+  "profile:read", // ✅ Profile information
+  "profile:write", // ✅ Create and update profiles  
+  "loop:read", // ✅ Loop information, details, folders, documents, participants, tasks, activities
+  "loop:write", // ✅ Create and update loops, details, folders, documents, participants
+  "contact:read", // ✅ Contact information
+  "contact:write", // ✅ Create, update, delete contacts
+  "template:read", // ✅ Loop templates
 ];
 
 // CORS proxy for development
@@ -21,12 +23,14 @@ const USE_CORS_PROXY = import.meta.env.VITE_USE_CORS_PROXY === "true";
 
 class DotloopApiService {
   constructor() {
+    console.log("🏗️ [API] DotloopApiService constructor called");
     this.accessToken = null;
     this.refreshToken = null;
     this.tokenExpiry = null;
 
     // Load tokens from localStorage on initialization
     this.loadTokens();
+    console.log("✅ [API] DotloopApiService initialized");
   }
 
   // Token management
@@ -443,5 +447,7 @@ class DotloopApiService {
 }
 
 // Create and export a singleton instance
+console.log("🔧 [API] Creating DotloopApiService instance...");
 const dotloopApi = new DotloopApiService();
+console.log("📤 [API] Exporting dotloopApi instance:", dotloopApi);
 export default dotloopApi;

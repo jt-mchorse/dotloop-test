@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import dotloopApi from "../services/dotloopApi";
 
+console.log('📥 [HOOK] dotloopApi imported:', dotloopApi);
+
 export const useDotloopAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
