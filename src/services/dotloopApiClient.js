@@ -200,9 +200,27 @@ class DotloopApiClient {
       ...options,
     };
 
+    // If Accept header indicates binary content, set responseType appropriately
+    const acceptHeader = config.headers.Accept || config.headers.accept;
+    if (acceptHeader && (
+      acceptHeader.includes('application/pdf') || 
+      acceptHeader.includes('application/octet-stream') ||
+      acceptHeader.includes('image/') ||
+      acceptHeader.includes('application/zip')
+    )) {
+      config.responseType = 'arraybuffer';
+      console.log('🔧 [API] Set responseType to arraybuffer for binary content');
+    }
+
     try {
       const response = await axios(`/api/dotloop/proxy${endpoint}`, config);
       console.log('✅ [API] Request successful:', endpoint);
+      
+      // Return raw response for binary data
+      if (config.responseType === 'arraybuffer') {
+        return response.data;
+      }
+      
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
@@ -213,6 +231,12 @@ class DotloopApiClient {
           config.headers.Authorization = `Bearer ${this.accessToken}`;
           const retryResponse = await axios(`/api/dotloop/proxy${endpoint}`, config);
           console.log('✅ [API] Retry after refresh successful:', endpoint);
+          
+          // Return raw response for binary data
+          if (config.responseType === 'arraybuffer') {
+            return retryResponse.data;
+          }
+          
           return retryResponse.data;
         } catch (refreshError) {
           console.error('❌ [API] Retry after refresh failed:', refreshError);
@@ -288,7 +312,7 @@ class DotloopApiClient {
   async downloadDocument(profileId, loopId, folderId, documentId, acceptType = 'application/pdf') {
     console.log('📥 [DOWNLOAD] Starting document download:', { profileId, loopId, folderId, documentId, acceptType });
     
-    // Use the same endpoint but with different Accept header to request file content
+    // According to Dotloop API docs: Use Accept: application/pdf to get binary content instead of metadata
     try {
       const response = await this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`, {
         headers: {
@@ -296,17 +320,13 @@ class DotloopApiClient {
         },
       });
       
-      console.log('✅ [DOWNLOAD] Document download successful');
+      console.log('✅ [DOWNLOAD] Document download successful, response type:', typeof response);
+      console.log('✅ [DOWNLOAD] Is ArrayBuffer:', response instanceof ArrayBuffer);
+      console.log('✅ [DOWNLOAD] Response size:', response?.byteLength || response?.length);
+      
       return response;
     } catch (error) {
       console.error('❌ [DOWNLOAD] Document download failed:', error);
-      
-      // If PDF download fails, try with generic accept header
-      if (acceptType !== 'application/octet-stream') {
-        console.log('🔄 [DOWNLOAD] Retrying with octet-stream...');
-        return this.downloadDocument(profileId, loopId, folderId, documentId, 'application/octet-stream');
-      }
-      
       throw error;
     }
   }

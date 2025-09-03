@@ -40,7 +40,7 @@ export default async function handler(req, res) {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        'Accept': req.headers.accept || 'application/json',  // Use client's Accept header
         'User-Agent': 'Dotloop-Next-App/1.0'
       }
     };

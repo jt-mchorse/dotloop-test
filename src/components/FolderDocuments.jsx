@@ -36,45 +36,75 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
   const handleDownload = async (doc) => {
     try {
       console.log('📥 [UI] Starting document download:', doc.name);
+      console.log('📥 [UI] Document details:', { 
+        id: doc.id, 
+        name: doc.name, 
+        folderId: doc.folderId 
+      });
       
-      // Call the API client download method
-      const response = await dotloopApi.downloadDocument(
+      // According to Dotloop API docs, use Accept: application/pdf to get binary content
+      console.log('📄 [UI] Downloading document with Accept: application/pdf');
+      const binaryResponse = await dotloopApi.downloadDocument(
         profileId, 
         loopId, 
         folder.id, 
-        doc.id
+        doc.id,
+        'application/pdf'
       );
       
-      // Create a blob from the response data
-      let blob;
-      if (response instanceof ArrayBuffer) {
-        blob = new Blob([response]);
-      } else if (typeof response === 'string') {
-        // If response is a string, convert to blob
-        blob = new Blob([response], { type: 'application/octet-stream' });
-      } else if (response.data) {
-        // If response has data property, use that
-        blob = new Blob([response.data]);
-      } else {
-        // Fallback: convert response to JSON string
-        blob = new Blob([JSON.stringify(response)], { type: 'application/json' });
+      console.log('📨 [UI] Binary response type:', typeof binaryResponse);
+      console.log('📨 [UI] Is ArrayBuffer:', binaryResponse instanceof ArrayBuffer);
+      console.log('📨 [UI] Response length:', binaryResponse?.byteLength || binaryResponse?.length);
+      
+      // Check if we got binary data (ArrayBuffer)
+      if (binaryResponse instanceof ArrayBuffer) {
+        console.log('✅ [UI] Got ArrayBuffer, creating PDF blob');
+        const blob = new Blob([binaryResponse], { type: 'application/pdf' });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = doc.name || `document-${doc.id}.pdf`;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        window.URL.revokeObjectURL(downloadUrl);
+        console.log('✅ [UI] Document download completed successfully');
+        return;
       }
       
-      // Create download URL and trigger download
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = doc.name || `document-${doc.id}`;
+      // If we got a Uint8Array or similar
+      if (binaryResponse instanceof Uint8Array || (binaryResponse && binaryResponse.byteLength)) {
+        console.log('✅ [UI] Got binary array, creating PDF blob');
+        const blob = new Blob([binaryResponse], { type: 'application/pdf' });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = doc.name || `document-${doc.id}.pdf`;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        window.URL.revokeObjectURL(downloadUrl);
+        console.log('✅ [UI] Document download completed successfully');
+        return;
+      }
       
-      // Append to body, click, and remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // If the response is not binary, log what we got
+      console.error('❌ [UI] Expected binary data but got:', {
+        type: typeof binaryResponse,
+        constructor: binaryResponse?.constructor?.name,
+        isArray: Array.isArray(binaryResponse),
+        keys: binaryResponse && typeof binaryResponse === 'object' ? Object.keys(binaryResponse) : null
+      });
       
-      // Clean up the URL
-      window.URL.revokeObjectURL(downloadUrl);
-      
-      console.log('✅ [UI] Document download completed successfully');
+      alert(`Unable to download document "${doc.name}". The API returned non-binary data. Check console for details.`);
       
     } catch (error) {
       console.error('❌ [UI] Document download failed:', error);
