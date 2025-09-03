@@ -1,7 +1,7 @@
 /**
  * Dotloop API Client for Next.js
  * Follows Dotloop API v2 guidelines and Next.js security best practices
- * 
+ *
  * Security features:
  * - Client secrets kept server-side only
  * - Access tokens managed securely
@@ -9,30 +9,30 @@
  * - Proper error handling for 401 Unauthorized
  */
 
-import axios from 'axios';
+import axios from "axios";
 
 /* ---------------- Dotloop Client Configuration ---------------- */
-const DOTLOOP_AUTH = process.env.NEXT_PUBLIC_DOTLOOP_AUTH_URL || 'https://auth.dotloop.com';
+const DOTLOOP_AUTH = process.env.NEXT_PUBLIC_DOTLOOP_AUTH_URL || "https://auth.dotloop.com";
 const CLIENT_ID = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_ID;
-const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || 'http://localhost:3000/callback';
+const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || "http://localhost:3000/callback";
 
 // OAuth 2.0 Scopes as per Dotloop API guidelines
 const SCOPES = [
-  'account:read',    // Account details
-  'profile:read',    // Profile information  
-  'loop:read',       // Loop information, details, folders, documents, participants, tasks, activities
-  'document:read',   // Document download access (required for binary downloads)
-  'contact:read',    // Contact information
-  'template:read',   // Loop templates
+  "account:read", // Account details
+  "profile:read", // Profile information
+  "loop:read", // Loop information, details, folders, documents, participants, tasks, activities
+  // 'document:read',   // Document download access (required for binary downloads)
+  "contact:read", // Contact information
+  "template:read", // Loop templates
 ];
 
 class DotloopApiClient {
   constructor() {
-    console.log('🏗️ [API] DotloopApiClient initialized');
+    console.log("🏗️ [API] DotloopApiClient initialized");
     this.accessToken = null;
     this.refreshToken = null;
     this.tokenExpiry = null;
-    
+
     // Bind all methods to maintain 'this' context
     this.loadTokens = this.loadTokens.bind(this);
     this.saveTokens = this.saveTokens.bind(this);
@@ -57,26 +57,26 @@ class DotloopApiClient {
     this.getContact = this.getContact.bind(this);
     this.getTemplates = this.getTemplates.bind(this);
     this.getTemplate = this.getTemplate.bind(this);
-    
+
     // Load tokens from localStorage on client-side
     this.loadTokens();
-    
-    console.log('✅ [API] DotloopApiClient methods bound and initialized');
-    console.log('🔍 [API] makeRequest method:', typeof this.makeRequest);
+
+    console.log("✅ [API] DotloopApiClient methods bound and initialized");
+    console.log("🔍 [API] makeRequest method:", typeof this.makeRequest);
   }
 
   /* ---------------- Token Management ---------------- */
-  
+
   loadTokens() {
-    if (typeof window !== 'undefined') {
-      console.log('📦 [TOKENS] Loading tokens from localStorage...');
-      const tokens = localStorage.getItem('dotloop_tokens');
+    if (typeof window !== "undefined") {
+      console.log("📦 [TOKENS] Loading tokens from localStorage...");
+      const tokens = localStorage.getItem("dotloop_tokens");
       if (tokens) {
         const { accessToken, refreshToken, tokenExpiry } = JSON.parse(tokens);
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.tokenExpiry = tokenExpiry;
-        console.log('✅ [TOKENS] Tokens loaded successfully');
+        console.log("✅ [TOKENS] Tokens loaded successfully");
       }
     }
   }
@@ -84,15 +84,18 @@ class DotloopApiClient {
   saveTokens(accessToken, refreshToken, expiresIn) {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
-    this.tokenExpiry = Date.now() + (expiresIn * 1000);
+    this.tokenExpiry = Date.now() + expiresIn * 1000;
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dotloop_tokens', JSON.stringify({
-        accessToken,
-        refreshToken,
-        tokenExpiry: this.tokenExpiry,
-      }));
-      console.log('💾 [TOKENS] Tokens saved to localStorage');
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "dotloop_tokens",
+        JSON.stringify({
+          accessToken,
+          refreshToken,
+          tokenExpiry: this.tokenExpiry,
+        })
+      );
+      console.log("💾 [TOKENS] Tokens saved to localStorage");
     }
   }
 
@@ -100,16 +103,16 @@ class DotloopApiClient {
     this.accessToken = null;
     this.refreshToken = null;
     this.tokenExpiry = null;
-    
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('dotloop_tokens');
-      console.log('🗑️ [TOKENS] Tokens cleared from localStorage');
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("dotloop_tokens");
+      console.log("🗑️ [TOKENS] Tokens cleared from localStorage");
     }
   }
 
   isTokenValid() {
     const valid = this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry;
-    console.log('🔍 [TOKENS] Token validity check:', valid ? '✅ Valid' : '❌ Invalid/Expired');
+    console.log("🔍 [TOKENS] Token validity check:", valid ? "✅ Valid" : "❌ Invalid/Expired");
     return valid;
   }
 
@@ -117,26 +120,26 @@ class DotloopApiClient {
 
   getAuthUrl(state = null) {
     const params = new URLSearchParams({
-      response_type: 'code',
+      response_type: "code",
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
-      scope: SCOPES.join(' '),
+      scope: SCOPES.join(" "),
     });
 
     if (state) {
-      params.append('state', state);
+      params.append("state", state);
     }
 
     const authUrl = `${DOTLOOP_AUTH}/oauth/authorize?${params.toString()}`;
-    console.log('🔗 [AUTH] Generated authorization URL');
+    console.log("🔗 [AUTH] Generated authorization URL");
     return authUrl;
   }
 
   async exchangeCodeForToken(code, state) {
-    console.log('🔄 [AUTH] Starting OAuth code exchange...');
-    
+    console.log("🔄 [AUTH] Starting OAuth code exchange...");
+
     try {
-      const response = await axios.post('/api/dotloop/auth/token', {
+      const response = await axios.post("/api/dotloop/auth/token", {
         code,
         state,
         redirect_uri: REDIRECT_URI,
@@ -144,34 +147,34 @@ class DotloopApiClient {
 
       const { access_token, refresh_token, expires_in } = response.data;
       this.saveTokens(access_token, refresh_token, expires_in);
-      
-      console.log('✅ [AUTH] Token exchange successful');
+
+      console.log("✅ [AUTH] Token exchange successful");
       return response.data;
     } catch (error) {
-      console.error('❌ [AUTH] Token exchange failed:', error.response?.data || error.message);
+      console.error("❌ [AUTH] Token exchange failed:", error.response?.data || error.message);
       throw error;
     }
   }
 
   async refreshAccessToken() {
     if (!this.refreshToken) {
-      throw new Error('No refresh token available');
+      throw new Error("No refresh token available");
     }
 
-    console.log('🔄 [TOKENS] Refreshing access token...');
-    
+    console.log("🔄 [TOKENS] Refreshing access token...");
+
     try {
-      const response = await axios.post('/api/dotloop/auth/refresh', {
+      const response = await axios.post("/api/dotloop/auth/refresh", {
         refresh_token: this.refreshToken,
       });
 
       const { access_token, refresh_token, expires_in } = response.data;
       this.saveTokens(access_token, refresh_token || this.refreshToken, expires_in);
-      
-      console.log('✅ [TOKENS] Token refreshed successfully');
+
+      console.log("✅ [TOKENS] Token refreshed successfully");
       return response.data;
     } catch (error) {
-      console.error('❌ [TOKENS] Token refresh failed:', error.response?.data || error.message);
+      console.error("❌ [TOKENS] Token refresh failed:", error.response?.data || error.message);
       this.clearTokens(); // Clear invalid tokens
       throw error;
     }
@@ -180,22 +183,22 @@ class DotloopApiClient {
   /* ---------------- API Request Methods ---------------- */
 
   async makeRequest(endpoint, options = {}) {
-    console.log('🌐 [API] Making request to:', endpoint);
+    console.log("🌐 [API] Making request to:", endpoint);
 
     // Ensure we have a valid token
     if (!this.isTokenValid()) {
       if (this.refreshToken) {
         await this.refreshAccessToken();
       } else {
-        throw new Error('Authentication required - no valid token available');
+        throw new Error("Authentication required - no valid token available");
       }
     }
 
     const config = {
-      method: options.method || 'GET',
+      method: options.method || "GET",
       headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.accessToken}`,
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
@@ -203,49 +206,50 @@ class DotloopApiClient {
 
     // If Accept header indicates binary content, set responseType appropriately
     const acceptHeader = config.headers.Accept || config.headers.accept;
-    if (acceptHeader && (
-      acceptHeader.includes('application/pdf') || 
-      acceptHeader.includes('application/octet-stream') ||
-      acceptHeader.includes('image/') ||
-      acceptHeader.includes('application/zip')
-    )) {
-      config.responseType = 'arraybuffer';
-      console.log('🔧 [API] Set responseType to arraybuffer for binary content');
+    if (
+      acceptHeader &&
+      (acceptHeader.includes("application/pdf") ||
+        acceptHeader.includes("application/octet-stream") ||
+        acceptHeader.includes("image/") ||
+        acceptHeader.includes("application/zip"))
+    ) {
+      config.responseType = "arraybuffer";
+      console.log("🔧 [API] Set responseType to arraybuffer for binary content");
     }
 
     try {
       const response = await axios(`/api/dotloop/proxy${endpoint}`, config);
-      console.log('✅ [API] Request successful:', endpoint);
-      
+      console.log("✅ [API] Request successful:", endpoint);
+
       // Return raw response for binary data
-      if (config.responseType === 'arraybuffer') {
+      if (config.responseType === "arraybuffer") {
         return response.data;
       }
-      
+
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
-        console.log('🔄 [API] 401 received, attempting token refresh...');
-        
+        console.log("🔄 [API] 401 received, attempting token refresh...");
+
         try {
           await this.refreshAccessToken();
           config.headers.Authorization = `Bearer ${this.accessToken}`;
           const retryResponse = await axios(`/api/dotloop/proxy${endpoint}`, config);
-          console.log('✅ [API] Retry after refresh successful:', endpoint);
-          
+          console.log("✅ [API] Retry after refresh successful:", endpoint);
+
           // Return raw response for binary data
-          if (config.responseType === 'arraybuffer') {
+          if (config.responseType === "arraybuffer") {
             return retryResponse.data;
           }
-          
+
           return retryResponse.data;
         } catch (refreshError) {
-          console.error('❌ [API] Retry after refresh failed:', refreshError);
+          console.error("❌ [API] Retry after refresh failed:", refreshError);
           throw refreshError;
         }
       }
-      
-      console.error('❌ [API] Request failed:', endpoint, error.response?.data || error.message);
+
+      console.error("❌ [API] Request failed:", endpoint, error.response?.data || error.message);
       throw error;
     }
   }
@@ -253,11 +257,11 @@ class DotloopApiClient {
   /* ---------------- Account & Profile API Methods ---------------- */
 
   async getAccount() {
-    return this.makeRequest('/account');
+    return this.makeRequest("/account");
   }
 
   async getProfiles() {
-    return this.makeRequest('/profile');
+    return this.makeRequest("/profile");
   }
 
   async getProfile(profileId) {
@@ -268,9 +272,7 @@ class DotloopApiClient {
 
   async getLoops(profileId, params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const endpoint = queryParams 
-      ? `/profile/${profileId}/loop?${queryParams}` 
-      : `/profile/${profileId}/loop`;
+    const endpoint = queryParams ? `/profile/${profileId}/loop?${queryParams}` : `/profile/${profileId}/loop`;
     return this.makeRequest(endpoint);
   }
 
@@ -286,7 +288,7 @@ class DotloopApiClient {
 
   async getFolders(profileId, loopId, params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const endpoint = queryParams 
+    const endpoint = queryParams
       ? `/profile/${profileId}/loop/${loopId}/folder?${queryParams}`
       : `/profile/${profileId}/loop/${loopId}/folder`;
     return this.makeRequest(endpoint);
@@ -300,7 +302,7 @@ class DotloopApiClient {
 
   async getDocuments(profileId, loopId, folderId, params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const endpoint = queryParams 
+    const endpoint = queryParams
       ? `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document?${queryParams}`
       : `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document`;
     return this.makeRequest(endpoint);
@@ -310,24 +312,34 @@ class DotloopApiClient {
     return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`);
   }
 
-  async downloadDocument(profileId, loopId, folderId, documentId, acceptType = 'application/pdf') {
-    console.log('📥 [DOWNLOAD] Starting document download:', { profileId, loopId, folderId, documentId, acceptType });
-    
-    // According to Dotloop API docs: Use Accept: application/pdf to get binary content instead of metadata
+  async downloadDocument(profileId, loopId, folderId, documentId, acceptType = "application/pdf") {
+    console.log("📥 [DOWNLOAD] Starting document download (POST method):", {
+      profileId,
+      loopId,
+      folderId,
+      documentId,
+      acceptType,
+    });
+
+    // Using POST method for document download with Accept header for binary content
     try {
-      const response = await this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`, {
-        headers: {
-          'Accept': acceptType,
-        },
-      });
-      
-      console.log('✅ [DOWNLOAD] Document download successful, response type:', typeof response);
-      console.log('✅ [DOWNLOAD] Is ArrayBuffer:', response instanceof ArrayBuffer);
-      console.log('✅ [DOWNLOAD] Response size:', response?.byteLength || response?.length);
-      
+      const response = await this.makeRequest(
+        `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`,
+        {
+          method: "POST",
+          headers: {
+            Accept: acceptType,
+          },
+        }
+      );
+
+      console.log("✅ [DOWNLOAD] Document download successful (POST), response type:", typeof response);
+      console.log("✅ [DOWNLOAD] Is ArrayBuffer:", response instanceof ArrayBuffer);
+      console.log("✅ [DOWNLOAD] Response size:", response?.byteLength || response?.length);
+
       return response;
     } catch (error) {
-      console.error('❌ [DOWNLOAD] Document download failed:', error);
+      console.error("❌ [DOWNLOAD] Document download failed (POST):", error);
       throw error;
     }
   }
@@ -336,7 +348,7 @@ class DotloopApiClient {
 
   async getContacts(params = {}) {
     const queryParams = new URLSearchParams(params).toString();
-    const endpoint = queryParams ? `/contact?${queryParams}` : '/contact';
+    const endpoint = queryParams ? `/contact?${queryParams}` : "/contact";
     return this.makeRequest(endpoint);
   }
 
@@ -347,7 +359,7 @@ class DotloopApiClient {
   /* ---------------- Template API Methods ---------------- */
 
   async getTemplates() {
-    return this.makeRequest('/template');
+    return this.makeRequest("/template");
   }
 
   async getTemplate(templateId) {
