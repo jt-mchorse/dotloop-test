@@ -21,6 +21,7 @@ const SCOPES = [
   'account:read',    // Account details
   'profile:read',    // Profile information  
   'loop:read',       // Loop information, details, folders, documents, participants, tasks, activities
+  'document:read',   // Document download access (required for binary downloads)
   'contact:read',    // Contact information
   'template:read',   // Loop templates
 ];

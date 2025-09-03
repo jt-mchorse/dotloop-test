@@ -108,7 +108,12 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
       
     } catch (error) {
       console.error('❌ [UI] Document download failed:', error);
-      alert(`Failed to download document: ${error.message}`);
+      // Check if it's a 403 error (likely missing document:read scope)
+      if (error.response?.status === 403) {
+        alert(`Download failed: Permission denied. This may be because the app needs to re-authenticate with additional permissions (document:read scope). Please log out and log back in to grant the required permissions.`);
+      } else {
+        alert(`Failed to download document: ${error.message}`);
+      }
     }
   };
 
