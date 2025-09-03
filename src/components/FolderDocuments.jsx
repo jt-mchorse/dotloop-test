@@ -33,6 +33,55 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
   };
 
 
+  const handleDownload = async (document) => {
+    try {
+      console.log('📥 [UI] Starting document download:', document.name);
+      
+      // Call the API client download method
+      const response = await dotloopApi.downloadDocument(
+        profileId, 
+        loopId, 
+        folder.id, 
+        document.id
+      );
+      
+      // Create a blob from the response data
+      let blob;
+      if (response instanceof ArrayBuffer) {
+        blob = new Blob([response]);
+      } else if (typeof response === 'string') {
+        // If response is a string, convert to blob
+        blob = new Blob([response], { type: 'application/octet-stream' });
+      } else if (response.data) {
+        // If response has data property, use that
+        blob = new Blob([response.data]);
+      } else {
+        // Fallback: convert response to JSON string
+        blob = new Blob([JSON.stringify(response)], { type: 'application/json' });
+      }
+      
+      // Create download URL and trigger download
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = document.name || `document-${document.id}`;
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      console.log('✅ [UI] Document download completed successfully');
+      
+    } catch (error) {
+      console.error('❌ [UI] Document download failed:', error);
+      alert(`Failed to download document: ${error.message}`);
+    }
+  };
+
   const getFileIcon = (filename) => {
     if (!filename) return '📄';
     const ext = filename.split('.').pop()?.toLowerCase();
@@ -143,26 +192,16 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
 
                     {/* Document Actions */}
                     <div className="flex items-center space-x-2 ml-4">
-                      {document.download_url && (
-                        <a
-                          href={document.download_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                        >
-                          Download
-                        </a>
-                      )}
-                      {document.view_url && (
-                        <a
-                          href={document.view_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
-                        >
-                          View
-                        </a>
-                      )}
+                      <button
+                        onClick={() => handleDownload(document)}
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        title={`Download ${document.name}`}
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download
+                      </button>
                     </div>
                   </div>
                 </div>

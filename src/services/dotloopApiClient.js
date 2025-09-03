@@ -51,6 +51,7 @@ class DotloopApiClient {
     this.getFolder = this.getFolder.bind(this);
     this.getDocuments = this.getDocuments.bind(this);
     this.getDocument = this.getDocument.bind(this);
+    this.downloadDocument = this.downloadDocument.bind(this);
     this.getContacts = this.getContacts.bind(this);
     this.getContact = this.getContact.bind(this);
     this.getTemplates = this.getTemplates.bind(this);
@@ -282,6 +283,32 @@ class DotloopApiClient {
 
   async getDocument(profileId, loopId, folderId, documentId) {
     return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`);
+  }
+
+  async downloadDocument(profileId, loopId, folderId, documentId, acceptType = 'application/pdf') {
+    console.log('📥 [DOWNLOAD] Starting document download:', { profileId, loopId, folderId, documentId, acceptType });
+    
+    // Use the same endpoint but with different Accept header to request file content
+    try {
+      const response = await this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`, {
+        headers: {
+          'Accept': acceptType,
+        },
+      });
+      
+      console.log('✅ [DOWNLOAD] Document download successful');
+      return response;
+    } catch (error) {
+      console.error('❌ [DOWNLOAD] Document download failed:', error);
+      
+      // If PDF download fails, try with generic accept header
+      if (acceptType !== 'application/octet-stream') {
+        console.log('🔄 [DOWNLOAD] Retrying with octet-stream...');
+        return this.downloadDocument(profileId, loopId, folderId, documentId, 'application/octet-stream');
+      }
+      
+      throw error;
+    }
   }
 
   /* ---------------- Contact API Methods ---------------- */

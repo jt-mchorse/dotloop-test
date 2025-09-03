@@ -79,6 +79,18 @@ export default async function handler(req, res) {
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
+    } else if (contentType && (
+      contentType.includes('application/pdf') || 
+      contentType.includes('application/octet-stream') ||
+      contentType.includes('image/') ||
+      contentType.includes('application/zip') ||
+      contentType.includes('application/msword') ||
+      contentType.includes('application/vnd.')
+    )) {
+      // Handle binary file downloads
+      console.log('🔽 [PROXY] Binary file download detected, content-type:', contentType);
+      const arrayBuffer = await response.arrayBuffer();
+      data = Buffer.from(arrayBuffer);
     } else {
       data = await response.text();
     }
@@ -109,12 +121,26 @@ export default async function handler(req, res) {
       hasData: !!data
     });
 
-    // Set appropriate content type for response
+    // Set appropriate content type and headers for response
     if (contentType) {
       res.setHeader('Content-Type', contentType);
     }
 
-    res.status(response.status).send(data);
+    // For binary downloads, set additional headers
+    if (data instanceof Buffer) {
+      const contentDisposition = response.headers.get('content-disposition');
+      if (contentDisposition) {
+        res.setHeader('Content-Disposition', contentDisposition);
+      }
+      const contentLength = response.headers.get('content-length');
+      if (contentLength) {
+        res.setHeader('Content-Length', contentLength);
+      }
+      
+      res.status(response.status).end(data);
+    } else {
+      res.status(response.status).send(data);
+    }
 
   } catch (error) {
     const responseTime = Date.now() - startTime;
