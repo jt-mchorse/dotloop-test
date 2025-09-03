@@ -92,6 +92,16 @@ const LoopsDisplay = () => {
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
+    onSuccess: (data) => {
+      console.log('✅ [LOOP_DETAILS] Loop details received:', data);
+      console.log('✅ [LOOP_DETAILS] Data structure:', JSON.stringify(data, null, 2));
+      if (data?.data) {
+        console.log('✅ [LOOP_DETAILS] Available keys:', Object.keys(data.data));
+        if (data.data["Property Address"]) {
+          console.log('✅ [LOOP_DETAILS] Property Address keys:', Object.keys(data.data["Property Address"]));
+        }
+      }
+    }
   });
 
   // Fetch folders for expanded loop
@@ -106,6 +116,14 @@ const LoopsDisplay = () => {
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
+    onSuccess: (data) => {
+      console.log('✅ [FOLDERS] Folders received for loop:', expandedLoop.name);
+      console.log('✅ [FOLDERS] Folders data:', data);
+      console.log('✅ [FOLDERS] Number of folders:', data?.meta?.total);
+      if (data?.data?.length > 0) {
+        console.log('✅ [FOLDERS] First folder structure:', data.data[0]);
+      }
+    }
   });
 
   const handleLoopClick = (loop) => {
@@ -118,13 +136,6 @@ const LoopsDisplay = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatCurrency = (amount) => {
-    if (!amount) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
 
   if (profilesLoading) {
     return (
@@ -215,7 +226,7 @@ const LoopsDisplay = () => {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {loop.loop_name || 'Unnamed Loop'}
+                        {loop.name || 'Unnamed Loop'}
                       </h3>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         loop.status === 'Active' 
@@ -260,38 +271,76 @@ const LoopsDisplay = () => {
                     </div>
                   )}
                   
-                  {loopDetails && (
+                  {loopDetails && loopDetails.data && (
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h4 className="font-medium text-gray-900 mb-3">Property Details</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        {loopDetails.data?.street_name && (
-                          <div>
-                            <span className="font-medium">Address:</span> {loopDetails.data.street_name}
+                        {loopDetails.data["Property Address"] && (
+                          <>
+                            {/* Full Address */}
+                            {(loopDetails.data["Property Address"]["Street Number"] || loopDetails.data["Property Address"]["Street Name"]) && (
+                              <div>
+                                <span className="font-medium">Address:</span> {
+                                  [
+                                    loopDetails.data["Property Address"]["Street Number"],
+                                    loopDetails.data["Property Address"]["Street Name"]
+                                  ].filter(Boolean).join(' ')
+                                }
+                              </div>
+                            )}
+                            
+                            {/* County/City */}
+                            {loopDetails.data["Property Address"]["County"] && (
+                              <div>
+                                <span className="font-medium">County:</span> {loopDetails.data["Property Address"]["County"]}
+                              </div>
+                            )}
+                            
+                            {/* State/Province */}
+                            {loopDetails.data["Property Address"]["State/Prov"] && (
+                              <div>
+                                <span className="font-medium">State/Province:</span> {loopDetails.data["Property Address"]["State/Prov"]}
+                              </div>
+                            )}
+                            
+                            {/* ZIP/Postal Code */}
+                            {loopDetails.data["Property Address"]["Zip/Postal Code"] && (
+                              <div>
+                                <span className="font-medium">ZIP/Postal Code:</span> {loopDetails.data["Property Address"]["Zip/Postal Code"]}
+                              </div>
+                            )}
+                            
+                            {/* Country */}
+                            {loopDetails.data["Property Address"]["Country"] && (
+                              <div>
+                                <span className="font-medium">Country:</span> {loopDetails.data["Property Address"]["Country"]}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        
+                        {/* Handle case when Property Address is not available but other data exists */}
+                        {!loopDetails.data["Property Address"] && Object.keys(loopDetails.data).length > 0 && (
+                          <div className="col-span-full">
+                            <div className="text-gray-700 mb-2 font-medium">Additional Details:</div>
+                            {Object.entries(loopDetails.data).map(([key, value]) => {
+                              // Skip nested objects for now, display simple key-value pairs
+                              if (typeof value !== 'object' && value) {
+                                return (
+                                  <div key={key} className="text-sm mb-1">
+                                    <span className="font-medium">{key}:</span> {value}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
                           </div>
                         )}
-                        {loopDetails.data?.city && (
-                          <div>
-                            <span className="font-medium">City:</span> {loopDetails.data.city}
-                          </div>
-                        )}
-                        {loopDetails.data?.state_province && (
-                          <div>
-                            <span className="font-medium">State:</span> {loopDetails.data.state_province}
-                          </div>
-                        )}
-                        {loopDetails.data?.zip_postal_code && (
-                          <div>
-                            <span className="font-medium">ZIP:</span> {loopDetails.data.zip_postal_code}
-                          </div>
-                        )}
-                        {loopDetails.data?.purchase_sale_price && (
-                          <div>
-                            <span className="font-medium">Price:</span> {formatCurrency(loopDetails.data.purchase_sale_price)}
-                          </div>
-                        )}
-                        {loopDetails.data?.property_type && (
-                          <div>
-                            <span className="font-medium">Type:</span> {loopDetails.data.property_type}
+                        
+                        {/* Handle case when no data is available */}
+                        {Object.keys(loopDetails.data).length === 0 && (
+                          <div className="col-span-full text-gray-500 italic">
+                            No property details available
                           </div>
                         )}
                       </div>
@@ -316,7 +365,14 @@ const LoopsDisplay = () => {
 
                   {foldersData && (
                     <div className="space-y-4">
-                      <h4 className="font-medium text-gray-900">Folders & Documents</h4>
+                      <h4 className="font-medium text-gray-900">
+                        Folders & Documents
+                        {foldersData.meta?.total !== undefined && (
+                          <span className="ml-2 text-sm font-normal text-gray-600">
+                            ({foldersData.meta.total} folder{foldersData.meta.total !== 1 ? 's' : ''})
+                          </span>
+                        )}
+                      </h4>
                       {foldersData.data?.map((folder) => (
                         <FolderDocuments 
                           key={folder.id}

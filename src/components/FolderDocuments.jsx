@@ -17,6 +17,14 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
+    onSuccess: (data) => {
+      console.log('✅ [DOCUMENTS] Documents received for folder:', folder.name);
+      console.log('✅ [DOCUMENTS] Documents data:', data);
+      console.log('✅ [DOCUMENTS] Number of documents:', data?.meta?.total);
+      if (data?.data?.length > 0) {
+        console.log('✅ [DOCUMENTS] First document structure:', data.data[0]);
+      }
+    }
   });
 
   const formatDate = (dateString) => {
@@ -24,12 +32,6 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return 'N/A';
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  };
 
   const getFileIcon = (filename) => {
     if (!filename) return '📄';
@@ -63,10 +65,13 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
           <span className="text-lg">📁</span>
           <div>
             <h5 className="font-medium text-gray-900">
-              {folder.folder_name || 'Unnamed Folder'}
+              {folder.name || 'Unnamed Folder'}
             </h5>
             <div className="text-sm text-gray-600">
-              Folder ID: {folder.folder_id}
+              Folder ID: {folder.id}
+              {isExpanded && documentsData?.meta?.total !== undefined && (
+                <span className="ml-2">• {documentsData.meta.total} document{documentsData.meta.total !== 1 ? 's' : ''}</span>
+              )}
             </div>
           </div>
         </div>
@@ -108,29 +113,18 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">
                       <span className="text-lg">
-                        {getFileIcon(document.filename || document.name)}
+                        {getFileIcon(document.name)}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
                           <h6 className="font-medium text-gray-900 truncate">
-                            {document.filename || document.name || 'Unnamed Document'}
+                            {document.name || 'Unnamed Document'}
                           </h6>
-                          {document.status && (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              document.status === 'Active'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {document.status}
-                            </span>
-                          )}
                         </div>
                         
                         <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
                           <span>ID: {document.id}</span>
-                          {document.file_size && (
-                            <span>Size: {formatFileSize(document.file_size)}</span>
-                          )}
+                          <span>Folder ID: {document.folderId}</span>
                           {document.created && (
                             <span>Created: {formatDate(document.created)}</span>
                           )}
