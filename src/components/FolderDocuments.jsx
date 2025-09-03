@@ -11,8 +11,8 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
     isLoading: documentsLoading,
     error: documentsError
   } = useQuery({
-    queryKey: ['documents', profileId, loopId, folder.folder_id],
-    queryFn: () => dotloopApi.getDocuments(profileId, loopId, folder.folder_id),
+    queryKey: ['documents', profileId, loopId, folder.id],
+    queryFn: () => dotloopApi.getDocuments(profileId, loopId, folder.id),
     enabled: isExpanded,
     retry: false,
     refetchOnWindowFocus: false,
@@ -104,16 +104,16 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
           {documents.length > 0 ? (
             <div className="divide-y divide-gray-100">
               {documents.map((document) => (
-                <div key={document.document_id} className="p-4 hover:bg-gray-50">
+                <div key={document.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">
                       <span className="text-lg">
-                        {getFileIcon(document.file_name)}
+                        {getFileIcon(document.filename || document.name)}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
                           <h6 className="font-medium text-gray-900 truncate">
-                            {document.file_name || document.document_name || 'Unnamed Document'}
+                            {document.filename || document.name || 'Unnamed Document'}
                           </h6>
                           {document.status && (
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -127,7 +127,7 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
                         </div>
                         
                         <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
-                          <span>ID: {document.document_id}</span>
+                          <span>ID: {document.id}</span>
                           {document.file_size && (
                             <span>Size: {formatFileSize(document.file_size)}</span>
                           )}

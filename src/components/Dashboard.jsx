@@ -299,8 +299,8 @@ const Dashboard = () => {
                   const profilesResult = await dotloopApi.getProfiles();
                   console.log('✅ [DEBUG] Profiles result:', profilesResult);
                   
-                  if (profilesResult?.data?.[0]?.profile_id) {
-                    const profileId = profilesResult.data[0].profile_id;
+                  if (profilesResult?.data?.[0]?.id) {
+                    const profileId = profilesResult.data[0].id;
                     console.log('🔄 [DEBUG] Testing loops with profile ID:', profileId);
                     const loopsResult = await dotloopApi.getLoops(profileId);
                     console.log('✅ [DEBUG] Loops result:', loopsResult);

@@ -25,8 +25,8 @@ const LoopsDisplay = () => {
     cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Get the primary profile ID from profiles data
-  const primaryProfileId = profilesData?.data?.find(p => p.is_default)?.profile_id || profilesData?.data?.[0]?.profile_id;
+  // Get the primary profile ID from profiles data (using correct API field names)
+  const primaryProfileId = profilesData?.data?.find(p => p.default)?.id || profilesData?.data?.[0]?.id;
 
   console.log('🔍 [LOOPS] Profiles data:', profilesData);
   console.log('🔍 [LOOPS] Profiles raw data:', profilesData?.data);
@@ -34,9 +34,9 @@ const LoopsDisplay = () => {
   if (profilesData?.data?.length > 0) {
     profilesData.data.forEach((profile, index) => {
       console.log(`🔍 [LOOPS] Profile ${index}:`, {
-        profile_id: profile.profile_id,
+        id: profile.id,
         name: profile.name,
-        is_default: profile.is_default,
+        default: profile.default,
         type: profile.type
       });
     });
@@ -66,7 +66,7 @@ const LoopsDisplay = () => {
       if (data?.data?.length > 0) {
         data.data.forEach((loop, index) => {
           console.log(`✅ [LOOPS] Loop ${index}:`, {
-            loop_id: loop.loop_id,
+            id: loop.id,
             loop_name: loop.loop_name,
             status: loop.status,
             created: loop.created,
@@ -86,8 +86,8 @@ const LoopsDisplay = () => {
     data: loopDetails,
     isLoading: detailsLoading
   } = useQuery({
-    queryKey: ['loopDetails', primaryProfileId, selectedLoop?.loop_id],
-    queryFn: () => dotloopApi.getLoopDetails(primaryProfileId, selectedLoop.loop_id),
+    queryKey: ['loopDetails', primaryProfileId, selectedLoop?.id],
+    queryFn: () => dotloopApi.getLoopDetails(primaryProfileId, selectedLoop.id),
     enabled: !!(primaryProfileId && selectedLoop),
     retry: false,
     refetchOnWindowFocus: false,
@@ -100,8 +100,8 @@ const LoopsDisplay = () => {
     isLoading: foldersLoading,
     error: foldersError
   } = useQuery({
-    queryKey: ['folders', primaryProfileId, expandedLoop?.loop_id],
-    queryFn: () => dotloopApi.getFolders(primaryProfileId, expandedLoop.loop_id),
+    queryKey: ['folders', primaryProfileId, expandedLoop?.id],
+    queryFn: () => dotloopApi.getFolders(primaryProfileId, expandedLoop.id),
     enabled: !!(primaryProfileId && expandedLoop),
     retry: false,
     refetchOnWindowFocus: false,
@@ -205,7 +205,7 @@ const LoopsDisplay = () => {
 
         <div className="divide-y divide-gray-200">
           {loops.map((loop) => (
-            <div key={loop.loop_id} className="p-6">
+            <div key={loop.id} className="p-6">
               {/* Loop Header */}
               <div 
                 className="cursor-pointer hover:bg-gray-50 -m-6 p-6 rounded-lg"
@@ -236,21 +236,21 @@ const LoopsDisplay = () => {
                         <span className="font-medium">Updated:</span> {formatDate(loop.updated)}
                       </div>
                       <div>
-                        <span className="font-medium">Loop ID:</span> {loop.loop_id}
+                        <span className="font-medium">Loop ID:</span> {loop.id}
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-2">
                     <button className="text-blue-600 hover:text-blue-800">
-                      {expandedLoop?.loop_id === loop.loop_id ? '▼' : '▶'}
+                      {expandedLoop?.id === loop.id ? '▼' : '▶'}
                     </button>
                   </div>
                 </div>
               </div>
 
               {/* Expanded Content */}
-              {expandedLoop?.loop_id === loop.loop_id && (
+              {expandedLoop?.id === loop.id && (
                 <div className="mt-6 space-y-6">
                   {/* Loop Details */}
                   {detailsLoading && (
@@ -319,10 +319,10 @@ const LoopsDisplay = () => {
                       <h4 className="font-medium text-gray-900">Folders & Documents</h4>
                       {foldersData.data?.map((folder) => (
                         <FolderDocuments 
-                          key={folder.folder_id}
+                          key={folder.id}
                           folder={folder}
                           profileId={primaryProfileId}
-                          loopId={loop.loop_id}
+                          loopId={loop.id}
                         />
                       ))}
                     </div>
