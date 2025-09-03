@@ -87,10 +87,11 @@ export default async function handler(req, res) {
       contentType.includes('application/msword') ||
       contentType.includes('application/vnd.')
     )) {
-      // Handle binary file downloads
+      // Handle binary file downloads - research shows dotloop returns Buffer objects
       console.log('🔽 [PROXY] Binary file download detected, content-type:', contentType);
       const arrayBuffer = await response.arrayBuffer();
       data = Buffer.from(arrayBuffer);
+      console.log('🔽 [PROXY] Buffer created, size:', data.length);
     } else {
       data = await response.text();
     }

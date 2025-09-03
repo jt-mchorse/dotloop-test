@@ -19,11 +19,10 @@ const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || "http://localhost:3
 // OAuth 2.0 Scopes as per Dotloop API guidelines
 const SCOPES = [
   "account:read", // Account details
-  "profile:read", // Profile information
-  "loop:read", // Loop information, details, folders, documents, participants, tasks, activities
-  // 'document:read',   // Document download access (required for binary downloads)
-  "contact:read", // Contact information
-  "template:read", // Loop templates
+  "profile:*", // Profile information (all profile permissions)
+  "loop:*", // Loop information, details, folders, documents, participants, tasks, activities (all loop permissions)
+  "contact:*", // Contact information (all contact permissions)
+  "template:*", // Loop templates (all template permissions)
 ];
 
 class DotloopApiClient {
@@ -312,34 +311,55 @@ class DotloopApiClient {
     return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`);
   }
 
-  async downloadDocument(profileId, loopId, folderId, documentId, acceptType = "application/pdf") {
-    console.log("📥 [DOWNLOAD] Starting document download (POST method):", {
+  async downloadDocument(profileId, loopId, folderId, documentId, documentName = 'document') {
+    console.log("📥 [DOWNLOAD] Starting document download:", {
       profileId,
       loopId,
       folderId,
       documentId,
-      acceptType,
+      documentName,
     });
 
-    // Using POST method for document download with Accept header for binary content
+    // Based on research: downloads should use a different endpoint pattern
+    // Some APIs use loopViewId instead of loopId for downloads
     try {
+      // Try the standard document endpoint first with Accept: application/pdf
       const response = await this.makeRequest(
         `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`,
         {
-          method: "POST",
           headers: {
-            Accept: acceptType,
+            'Accept': 'application/pdf',
           },
         }
       );
 
-      console.log("✅ [DOWNLOAD] Document download successful (POST), response type:", typeof response);
+      console.log("✅ [DOWNLOAD] Document download successful, response type:", typeof response);
       console.log("✅ [DOWNLOAD] Is ArrayBuffer:", response instanceof ArrayBuffer);
       console.log("✅ [DOWNLOAD] Response size:", response?.byteLength || response?.length);
 
       return response;
     } catch (error) {
-      console.error("❌ [DOWNLOAD] Document download failed (POST):", error);
+      console.error("❌ [DOWNLOAD] Document download failed:", error);
+      
+      // Try alternative endpoint pattern if first one fails
+      if (error.response?.status === 404) {
+        console.log("🔄 [DOWNLOAD] Trying alternative download endpoint...");
+        try {
+          const altResponse = await this.makeRequest(
+            `/profile/${profileId}/loop/${loopId}/document/${documentId}`,
+            {
+              headers: {
+                'Accept': 'application/pdf',
+              },
+            }
+          );
+          console.log("✅ [DOWNLOAD] Alternative endpoint successful");
+          return altResponse;
+        } catch (altError) {
+          console.error("❌ [DOWNLOAD] Alternative endpoint also failed:", altError);
+        }
+      }
+      
       throw error;
     }
   }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDotloopAuth } from '../hooks/useDotloopAuth';
 import dotloopApi from '../services/dotloopApiClient';
 import LoopsDisplay from './LoopsDisplay';
+import ApiDebugger from './ApiDebugger';
 
 console.log('📥 [DASHBOARD] DotloopApiClient imported');
 
@@ -156,23 +157,23 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✅</span>
-              <span className="text-sm font-medium">profile:read</span>
-              <span className="text-xs text-gray-500 ml-2">- User profile data</span>
+              <span className="text-sm font-medium">profile:*</span>
+              <span className="text-xs text-gray-500 ml-2">- All profile permissions</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✅</span>
-              <span className="text-sm font-medium">loop:read</span>
-              <span className="text-xs text-gray-500 ml-2">- List and view loops (includes documents)</span>
+              <span className="text-sm font-medium">loop:*</span>
+              <span className="text-xs text-gray-500 ml-2">- All loop permissions (includes documents)</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✅</span>
-              <span className="text-sm font-medium">contact:read</span>
-              <span className="text-xs text-gray-500 ml-2">- List and view contacts</span>
+              <span className="text-sm font-medium">contact:*</span>
+              <span className="text-xs text-gray-500 ml-2">- All contact permissions</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✅</span>
-              <span className="text-sm font-medium">template:read</span>
-              <span className="text-xs text-gray-500 ml-2">- List and view templates</span>
+              <span className="text-sm font-medium">template:*</span>
+              <span className="text-xs text-gray-500 ml-2">- All template permissions</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✅</span>
@@ -180,6 +181,11 @@ const Dashboard = () => {
               <span className="text-xs text-gray-500 ml-2">- Administrative data</span>
             </div>
           </div>
+        </div>
+
+        {/* API Debugger */}
+        <div className="mb-8">
+          <ApiDebugger />
         </div>
 
         {/* Comprehensive Loops Display */}
