@@ -33,16 +33,16 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
   };
 
 
-  const handleDownload = async (document) => {
+  const handleDownload = async (doc) => {
     try {
-      console.log('📥 [UI] Starting document download:', document.name);
+      console.log('📥 [UI] Starting document download:', doc.name);
       
       // Call the API client download method
       const response = await dotloopApi.downloadDocument(
         profileId, 
         loopId, 
         folder.id, 
-        document.id
+        doc.id
       );
       
       // Create a blob from the response data
@@ -64,7 +64,7 @@ const FolderDocuments = ({ folder, profileId, loopId }) => {
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = document.name || `document-${document.id}`;
+      link.download = doc.name || `document-${doc.id}`;
       
       // Append to body, click, and remove
       document.body.appendChild(link);
