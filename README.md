@@ -1,174 +1,480 @@
-# Dotloop API Test Application
+# Dotloop API Integration - Next.js Application
 
-A React-based front-end application for testing the Dotloop Public API v2 integration.
+A modern Next.js application for testing and demonstrating the Dotloop Public API v2 integration with secure authentication, comprehensive API coverage, and production-ready architecture.
 
-## Features
+## 🚀 Features
 
-- OAuth2 authentication with Dotloop
-- Complete API integration with all Dotloop endpoints
-- Modern React UI with Tailwind CSS
-- Real-time data fetching and display
-- Token management with automatic refresh
-- Protected routes and authentication flow
+- ✅ **OAuth2 Authentication** - Complete authorization flow with Dotloop
+- ✅ **Secure Token Management** - Server-side token exchange and refresh handling
+- ✅ **Complete API Coverage** - Integration with all major Dotloop endpoints
+- ✅ **Next.js Architecture** - Server-side rendering with API routes
+- ✅ **Modern UI/UX** - Responsive design with Tailwind CSS
+- ✅ **Real-time Data** - Dynamic loading with React Query
+- ✅ **Error Handling** - Comprehensive error states and recovery
+- ✅ **Production Ready** - Secure deployment with Vercel support
 
-## Prerequisites
+## 📋 Prerequisites
 
-- Node.js (v18 or higher)
-- npm or yarn
-- Dotloop API credentials (Client ID and Client Secret)
+- **Node.js** v18 or higher
+- **npm** or **yarn**
+- **Dotloop Developer Account** with API credentials
+- **Environment Variables** configured
 
-## Installation
+## ⚡ Quick Start
 
-1. Clone or download this project
-2. Install dependencies:
+### 1. Clone & Install
 
-   ```bash
-   npm install
-   ```
-
-3. Configure environment variables:
-   Create a `.env` file in the root directory with the following variables:
-   ```
-   VITE_DOTLOOP_CLIENT_ID=your_client_id_here
-   VITE_DOTLOOP_CLIENT_SECRET=your_client_secret_here
-   VITE_DOTLOOP_AUTH_URL=https://auth.dotloop.com
-   VITE_DOTLOOP_API_URL=https://api-gateway.dotloop.com/public/v2
-   VITE_REDIRECT_URI=http://localhost:5173/callback
-   ```
-
-## CORS Configuration
-
-To handle CORS issues during development, you can use a CORS proxy. Create a `.env` file in the root directory with the following configuration:
-
-```env
-# Dotloop API Configuration
-VITE_DOTLOOP_CLIENT_ID=your_client_id_here
-VITE_DOTLOOP_CLIENT_SECRET=your_client_secret_here
-VITE_DOTLOOP_AUTH_URL=https://auth.dotloop.com
-VITE_DOTLOOP_API_URL=https://api-gateway.dotloop.com/public/v2
-VITE_REDIRECT_URI=http://localhost:5173/callback
-
-# CORS Proxy Configuration (for development)
-VITE_USE_CORS_PROXY=true
-VITE_CORS_PROXY=https://cors-anywhere.herokuapp.com/
+```bash
+git clone <repository-url>
+cd dotloop-test-app
+npm install
 ```
 
-### Alternative Solutions:
+### 2. Environment Configuration
 
-1. **CORS Browser Extension**: Install a CORS browser extension like "CORS Unblock" or "Allow CORS"
-2. **Local CORS Proxy**: Run a local CORS proxy server
-3. **Backend Proxy**: Create a backend service to handle OAuth token exchange
+Create `.env.local` file in the root directory:
 
-### Recommended Approach:
+```env
+# Dotloop API Configuration for Next.js
 
-For development, use the CORS proxy configuration above. For production, implement a backend service to handle OAuth token exchange securely.
+# Public environment variables (exposed to the client)
+NEXT_PUBLIC_DOTLOOP_CLIENT_ID=your_client_id_here
+NEXT_PUBLIC_DOTLOOP_AUTH_URL=https://auth.dotloop.com
+NEXT_PUBLIC_DOTLOOP_API_URL=https://api-gateway.dotloop.com/public/v2
+NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000/callback
 
-## Development
+# Private environment variables (server-side only)
+DOTLOOP_CLIENT_SECRET=your_client_secret_here
+```
 
-Start the development server:
+### 3. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+Visit `http://localhost:3000` to see the application.
 
-## Usage
+### 4. Build for Production
 
-1. **Authentication**: Click "Connect to Dotloop" to start the OAuth2 flow
-2. **Authorization**: You'll be redirected to Dotloop to authorize the application
-3. **Dashboard**: After successful authentication, you'll see your account data and can test various API endpoints
-4. **API Testing**: Use the refresh buttons to test different API calls
+```bash
+npm run build
+npm start
+```
 
-## API Endpoints Tested
+## 🏗️ Architecture Overview
 
-- **Account**: Get account information
-- **Profiles**: List and manage profiles
-- **Loops**: List and manage loops
-- **Contacts**: List and manage contacts
-- **Templates**: List available templates
-- **Loop Details**: Get detailed loop information
-- **Loop Folders**: Manage loop folders
-- **Loop Documents**: Upload and manage documents
-- **Loop Participants**: Manage loop participants
-- **Loop Tasks**: View task lists and items
-- **Loop Activities**: View loop activities
-- **Webhooks**: Manage webhook subscriptions and events
+### Next.js API Routes Structure
 
-## Permissions Required
+```
+pages/api/dotloop/
+├── auth/
+│   ├── token.js              # OAuth token exchange
+│   └── refresh.js            # Token refresh endpoint
+└── proxy/
+    └── [...path].js          # Authenticated API proxy
+```
 
-The application requests the following scopes:
-
-- `account:read` - Read account information
-- `profile:read` - Read profile information
-- `loop:read` - Read loop data
-- `contact:read` - Read contact information
-- `template:read` - Read template data
-- `admin:read` - Read admin data
-- `document:read` - Read document information
-
-## Project Structure
+### Frontend Architecture
 
 ```
 src/
 ├── components/
-│   ├── Dashboard.jsx          # Main dashboard component
-│   ├── LoginPage.jsx          # Login page component
-│   └── OAuthCallback.jsx      # OAuth callback handler
+│   ├── Dashboard.jsx         # Main dashboard with API testing
+│   ├── LoopsDisplay.jsx      # Loop data visualization
+│   ├── FolderDocuments.jsx   # Folder/document management
+│   ├── LoginPage.jsx         # Authentication page
+│   └── OAuthCallback.jsx     # OAuth callback handler
 ├── hooks/
-│   └── useDotloopAuth.js      # Authentication hook
+│   └── useDotloopAuth.js     # Authentication state management
 ├── services/
-│   └── dotloopApi.js          # API service class
-├── utils/                     # Utility functions
-├── App.jsx                    # Main app component
-└── main.jsx                   # App entry point
+│   └── dotloopApiClient.js   # Secure API client
+└── utils/
+    └── helpers.js            # Utility functions
 ```
 
-## Authentication Flow
+## 🔐 Security Architecture
 
-1. User clicks "Connect to Dotloop"
-2. User is redirected to Dotloop authorization page
-3. User authorizes the application
-4. Dotloop redirects back to `/callback` with authorization code
-5. Application exchanges code for access token
-6. User is redirected to dashboard
-7. Tokens are stored in localStorage for future use
+### Server-Side Security Features
 
-## Token Management
+1. **Client Secret Protection**: Never exposed to browser
+2. **Token Proxy**: All API requests go through secure Next.js routes
+3. **HTTP Basic Auth**: Token exchanges use proper authentication headers
+4. **HTTPS Only**: All communications use secure protocols
 
-- Access tokens expire after 12 hours
-- Refresh tokens are used to get new access tokens
-- Tokens are automatically refreshed when making API calls
-- Tokens are stored securely in localStorage
+### Client-Side Security Features
 
-## Error Handling
+1. **Token Storage**: Secure localStorage with expiration handling
+2. **Automatic Refresh**: Tokens refresh before expiration
+3. **Error Recovery**: Graceful handling of authentication failures
+4. **Method Binding**: Prevents context loss in React components
 
-The application includes comprehensive error handling for:
+## 🛠️ API Documentation
 
-- Authentication failures
-- API request failures
-- Token refresh failures
-- Network errors
+### Authentication Flow
 
-## Building for Production
-
-```bash
-npm run build
+#### 1. Initial Authorization
+```javascript
+// Redirect user to Dotloop authorization
+const authUrl = dotloopApi.getAuthUrl(state);
+window.location.href = authUrl;
 ```
 
-The built application will be in the `dist` directory.
+#### 2. Token Exchange (Server-Side)
+```javascript
+// POST /api/dotloop/auth/token
+{
+  "code": "authorization_code",
+  "redirect_uri": "http://localhost:3000/callback"
+}
 
-## Troubleshooting
+// Response
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "expires_in": 43200,
+  "token_type": "Bearer"
+}
+```
 
-1. **Authentication Issues**: Ensure your Client ID and Secret are correct
-2. **CORS Issues**: Make sure your redirect URI is properly configured
-3. **API Errors**: Check the browser console for detailed error messages
-4. **Token Issues**: Clear localStorage and try re-authenticating
+#### 3. Token Refresh (Server-Side)
+```javascript
+// POST /api/dotloop/auth/refresh
+{
+  "refresh_token": "existing_refresh_token"
+}
+```
 
-## API Documentation
+### API Client Usage
 
-For detailed API documentation, visit: https://dotloop.github.io/public-api/
+#### Initialize Client
+```javascript
+import dotloopApi from '../services/dotloopApiClient';
 
-## License
+// Client automatically handles:
+// - Token loading from localStorage
+// - Method binding for React compatibility
+// - Automatic token refresh on 401 errors
+```
 
-This is a test application for educational and development purposes.
+#### Profile Management
+```javascript
+// Get all profiles
+const profiles = await dotloopApi.getProfiles();
+
+// Get specific profile
+const profile = await dotloopApi.getProfile(profileId);
+
+// Response structure:
+{
+  "meta": { "total": 1 },
+  "data": [
+    {
+      "id": 19855667,
+      "name": "Default Profile",
+      "type": "INDIVIDUAL",
+      "default": true
+    }
+  ]
+}
+```
+
+#### Loop Management
+```javascript
+// Get loops for a profile
+const loops = await dotloopApi.getLoops(profileId);
+
+// Get loop details with property information
+const loopDetails = await dotloopApi.getLoopDetails(profileId, loopId);
+
+// Loop details response structure:
+{
+  "data": {
+    "Property Address": {
+      "Country": "United Kingdom",
+      "Street Number": "3",
+      "Street Name": "Goldsmith Street",
+      "State/Prov": "England",
+      "Zip/Postal Code": "EX4 3EF",
+      "County": "Devon"
+    }
+  }
+}
+```
+
+#### Folder & Document Management
+```javascript
+// Get folders for a loop
+const folders = await dotloopApi.getFolders(profileId, loopId);
+
+// Get documents in a folder
+const documents = await dotloopApi.getDocuments(profileId, loopId, folderId);
+
+// Folder response structure:
+{
+  "meta": { "total": 1 },
+  "data": [
+    {
+      "id": 217294335,
+      "name": "Folder",
+      "created": "2025-07-18T09:26:29Z",
+      "updated": "2025-07-18T09:26:29Z"
+    }
+  ]
+}
+
+// Document response structure:
+{
+  "meta": { "total": 1 },
+  "data": [
+    {
+      "id": 1352920739,
+      "folderId": 217294335,
+      "name": "Document Name",
+      "created": "2025-07-18T09:27:17Z",
+      "updated": "2025-07-18T09:27:17Z"
+    }
+  ]
+}
+```
+
+#### Contact Management
+```javascript
+// Get all contacts
+const contacts = await dotloopApi.getContacts();
+
+// Get specific contact
+const contact = await dotloopApi.getContact(contactId);
+```
+
+#### Template Management
+```javascript
+// Get all templates
+const templates = await dotloopApi.getTemplates();
+
+// Get specific template
+const template = await dotloopApi.getTemplate(templateId);
+```
+
+### React Integration with React Query
+
+#### Data Fetching Pattern
+```javascript
+import { useQuery } from '@tanstack/react-query';
+import dotloopApi from '../services/dotloopApiClient';
+
+function ProfileComponent() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: () => dotloopApi.getProfiles(),
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      {data?.data?.map(profile => (
+        <div key={profile.id}>{profile.name}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Error Handling Pattern
+```javascript
+const { data, error, refetch } = useQuery({
+  queryKey: ['loops', profileId],
+  queryFn: () => dotloopApi.getLoops(profileId),
+  enabled: !!profileId,
+  onError: (error) => {
+    console.error('Failed to fetch loops:', error);
+    // Handle specific error cases
+    if (error.response?.status === 401) {
+      // Token expired, handled automatically by client
+    }
+  }
+});
+```
+
+## 🔧 API Client Configuration
+
+### Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_DOTLOOP_CLIENT_ID` | Your Dotloop Client ID | `edb0f8b1-971a-49a9-874c-7143ad5960d8` |
+| `NEXT_PUBLIC_DOTLOOP_AUTH_URL` | Dotloop Auth Server URL | `https://auth.dotloop.com` |
+| `NEXT_PUBLIC_DOTLOOP_API_URL` | Dotloop API Gateway URL | `https://api-gateway.dotloop.com/public/v2` |
+| `NEXT_PUBLIC_REDIRECT_URI` | OAuth Callback URL | `http://localhost:3000/callback` |
+| `DOTLOOP_CLIENT_SECRET` | Your Dotloop Client Secret (Server-only) | `da0795b3-de9b-4799-b2a4-9ca29110017e` |
+
+### OAuth Scopes
+
+The application requests the following permissions:
+
+```javascript
+const SCOPES = [
+  'account:read',    // Account details
+  'profile:read',    // Profile information  
+  'loop:read',       // Loop information, details, folders, documents
+  'contact:read',    // Contact information
+  'template:read',   // Loop templates
+];
+```
+
+## 🚦 API Response Patterns
+
+### Success Response
+```javascript
+{
+  "meta": {
+    "total": 10,
+    "page": 1,
+    "per_page": 25
+  },
+  "data": [
+    // Array of objects
+  ]
+}
+```
+
+### Error Response
+```javascript
+{
+  "error": "invalid_request",
+  "error_description": "The request is missing a required parameter"
+}
+```
+
+### API Client Error Handling
+```javascript
+try {
+  const data = await dotloopApi.getProfiles();
+  // Handle success
+} catch (error) {
+  if (error.response?.status === 401) {
+    // Authentication error - client handles token refresh automatically
+  } else if (error.response?.status === 403) {
+    // Permission denied
+  } else if (error.response?.status >= 500) {
+    // Server error
+  }
+  // Handle error appropriately
+}
+```
+
+## 📊 Debugging & Logging
+
+The application includes comprehensive logging for troubleshooting:
+
+### API Client Logs
+```
+🏗️ [API] DotloopApiClient initialized
+✅ [API] DotloopApiClient methods bound and initialized
+🔍 [API] makeRequest method: function
+🌐 [API] Making request to: /profile
+✅ [API] Request successful: /profile
+```
+
+### Authentication Logs
+```
+🔐 [AUTH] OAuth Token Exchange Request
+✅ [AUTH] Token exchange successful
+🔄 [TOKENS] Refreshing access token...
+✅ [TOKENS] Token refreshed successfully
+```
+
+### Data Fetching Logs
+```
+✅ [LOOPS] Loops data received
+✅ [FOLDERS] Folders received for loop: MyLoop
+✅ [DOCUMENTS] Documents received for folder: Documents
+```
+
+## 🚀 Deployment
+
+### Vercel Deployment
+
+1. **Environment Variables**: Set all required environment variables in Vercel dashboard
+2. **Build Command**: `npm run build`
+3. **Output Directory**: `.next`
+4. **Install Command**: `npm install`
+
+### Production Considerations
+
+- ✅ Client secrets are server-side only
+- ✅ All API requests go through secure Next.js routes
+- ✅ Tokens are properly managed and refreshed
+- ✅ Error handling for production scenarios
+- ✅ HTTPS enforcement for security
+
+## 🛠️ Development Tips
+
+### Adding New API Endpoints
+
+1. **Add method to API client**:
+```javascript
+// In dotloopApiClient.js
+async getNewEndpoint(param) {
+  return this.makeRequest(`/new-endpoint/${param}`);
+}
+```
+
+2. **Use in components**:
+```javascript
+const { data } = useQuery({
+  queryKey: ['newEndpoint', param],
+  queryFn: () => dotloopApi.getNewEndpoint(param),
+});
+```
+
+### Custom Hook Pattern
+```javascript
+// Custom hook for specific API operations
+export function useLoopData(profileId) {
+  return useQuery({
+    queryKey: ['loops', profileId],
+    queryFn: () => dotloopApi.getLoops(profileId),
+    enabled: !!profileId,
+  });
+}
+```
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| "makeRequest is undefined" | Check method binding in constructor |
+| "Profile ID is undefined" | Verify API field mappings (use `id`, not `profile_id`) |
+| "401 Unauthorized" | Token expired - client handles refresh automatically |
+| "CORS errors" | Use Next.js API routes (already implemented) |
+| "Build fails" | Check environment variables are set correctly |
+
+### Debug Mode
+
+Enable detailed logging by checking browser console for:
+- API client initialization logs
+- Request/response data
+- Error messages with stack traces
+
+## 📚 Resources
+
+- **Dotloop API Documentation**: https://dotloop.github.io/public-api/
+- **Next.js Documentation**: https://nextjs.org/docs
+- **React Query Documentation**: https://tanstack.com/query/latest
+- **Tailwind CSS Documentation**: https://tailwindcss.com/docs
+
+## 📄 License
+
+This project is for educational and development purposes. Please review Dotloop's API terms of service for production use.
+
+---
+
+**Built with ❤️ using Next.js, React Query, and Tailwind CSS**
