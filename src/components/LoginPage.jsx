@@ -38,7 +38,7 @@ const LoginPage = () => {
               </h3>
               <p className="text-sm text-gray-600 mb-4">
                 This application requires access to your Dotloop account to test the API integration.
-                You'll be redirected to Dotloop to authorize this application.
+                You&apos;ll be redirected to Dotloop to authorize this application.
               </p>
             </div>
             

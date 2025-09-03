@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { useDotloopAuth } from '../hooks/useDotloopAuth';
 
 const OAuthCallback = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { handleCallback } = useDotloopAuth();
   const [status, setStatus] = useState('Processing...');
 
@@ -12,10 +11,9 @@ const OAuthCallback = () => {
     const processCallback = async () => {
       console.log("🔄 [CALLBACK] OAuth callback component mounted");
       console.log("🔄 [CALLBACK] Current URL:", window.location.href);
+      console.log("🔄 [CALLBACK] Router query:", router.query);
       
-      const code = searchParams.get('code');
-      const state = searchParams.get('state');
-      const error = searchParams.get('error');
+      const { code, state, error } = router.query;
 
       console.log("🔄 [CALLBACK] URL parameters:");
       console.log("🔄 [CALLBACK] - Code:", code ? "✅ Present" : "❌ Missing");
@@ -25,14 +23,14 @@ const OAuthCallback = () => {
       if (error) {
         console.error("❌ [CALLBACK] OAuth error received:", error);
         setStatus(`Error: ${error}`);
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => router.push('/'), 3000);
         return;
       }
 
       if (!code) {
         console.error("❌ [CALLBACK] No authorization code received");
         setStatus('No authorization code received');
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => router.push('/'), 3000);
         return;
       }
 
@@ -44,21 +42,23 @@ const OAuthCallback = () => {
         if (success) {
           console.log("✅ [CALLBACK] Authentication successful, redirecting to dashboard");
           setStatus('Authentication successful! Redirecting...');
-          setTimeout(() => navigate('/dashboard'), 1500);
+          setTimeout(() => router.push('/dashboard'), 1500);
         } else {
           console.error("❌ [CALLBACK] Authentication failed");
           setStatus('Authentication failed');
-          setTimeout(() => navigate('/'), 3000);
+          setTimeout(() => router.push('/'), 3000);
         }
       } catch (err) {
         console.error("❌ [CALLBACK] Error during callback processing:", err);
         setStatus(`Error: ${err.message}`);
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => router.push('/'), 3000);
       }
     };
 
-    processCallback();
-  }, [searchParams, handleCallback, navigate]);
+    if (router.isReady) {
+      processCallback();
+    }
+  }, [router.isReady, router.query, handleCallback, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

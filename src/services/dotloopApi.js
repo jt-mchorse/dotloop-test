@@ -1,11 +1,11 @@
 import axios from "axios";
 
 /* ---------------- Dotloop constants ---------------- */
-const DOTLOOP_AUTH = import.meta.env.VITE_DOTLOOP_AUTH_URL || "https://auth.dotloop.com";
-const DOTLOOP_API = import.meta.env.VITE_DOTLOOP_API_URL || "https://api-gateway.dotloop.com/public/v2";
-const CLIENT_ID = import.meta.env.VITE_DOTLOOP_CLIENT_ID;
-const CLIENT_SECRET = import.meta.env.VITE_DOTLOOP_CLIENT_SECRET;
-const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || "http://localhost:5173/callback";
+const DOTLOOP_AUTH = process.env.NEXT_PUBLIC_DOTLOOP_AUTH_URL || process.env.VITE_DOTLOOP_AUTH_URL || "https://auth.dotloop.com";
+const DOTLOOP_API = process.env.NEXT_PUBLIC_DOTLOOP_API_URL || process.env.VITE_DOTLOOP_API_URL || "https://api-gateway.dotloop.com/public/v2";
+const CLIENT_ID = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_ID || process.env.VITE_DOTLOOP_CLIENT_ID;
+const CLIENT_SECRET = process.env.NEXT_PUBLIC_DOTLOOP_CLIENT_SECRET || process.env.VITE_DOTLOOP_CLIENT_SECRET;
+const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || process.env.VITE_REDIRECT_URI || "http://localhost:3000/oauth-callback";
 const SCOPES = [
   "account:read", // ✅ Account details
   "profile:read", // ✅ Profile information
@@ -17,9 +17,7 @@ const SCOPES = [
   "template:read", // ✅ Loop templates
 ];
 
-// CORS proxy for development
-const CORS_PROXY = import.meta.env.VITE_CORS_PROXY || "https://cors-anywhere.herokuapp.com/";
-const USE_CORS_PROXY = import.meta.env.VITE_USE_CORS_PROXY === "true";
+// Note: CORS proxy no longer needed with Next.js API routes
 
 class DotloopApiService {
   constructor() {
@@ -60,12 +58,15 @@ class DotloopApiService {
   // Token management
   loadTokens() {
     console.log("📦 [TOKENS] Loading tokens from localStorage...");
-    const tokens = localStorage.getItem("dotloop_tokens");
-    if (tokens) {
-      const { accessToken, refreshToken, tokenExpiry } = JSON.parse(tokens);
-      this.accessToken = accessToken;
-      this.refreshToken = refreshToken;
-      this.tokenExpiry = tokenExpiry;
+    // Only access localStorage on the client side
+    if (typeof window !== 'undefined') {
+      const tokens = localStorage.getItem("dotloop_tokens");
+      if (tokens) {
+        const { accessToken, refreshToken, tokenExpiry } = JSON.parse(tokens);
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.tokenExpiry = tokenExpiry;
+      }
     }
   }
 
@@ -74,21 +75,27 @@ class DotloopApiService {
     this.refreshToken = refreshToken;
     this.tokenExpiry = Date.now() + expiresIn * 1000;
 
-    localStorage.setItem(
-      "dotloop_tokens",
-      JSON.stringify({
-        accessToken,
-        refreshToken,
-        tokenExpiry: this.tokenExpiry,
-      })
-    );
+    // Only access localStorage on the client side
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        "dotloop_tokens",
+        JSON.stringify({
+          accessToken,
+          refreshToken,
+          tokenExpiry: this.tokenExpiry,
+        })
+      );
+    }
   }
 
   clearTokens() {
     this.accessToken = null;
     this.refreshToken = null;
     this.tokenExpiry = null;
-    localStorage.removeItem("dotloop_tokens");
+    // Only access localStorage on the client side
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("dotloop_tokens");
+    }
   }
 
   isTokenValid() {
