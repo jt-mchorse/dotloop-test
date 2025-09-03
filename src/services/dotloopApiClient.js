@@ -320,13 +320,13 @@ class DotloopApiClient {
       documentName,
     });
 
-    // Based on research: downloads should use a different endpoint pattern
-    // Some APIs use loopViewId instead of loopId for downloads
+    // IMPORTANT: Use GET method, not POST. 405 error indicates method not allowed
     try {
-      // Try the standard document endpoint first with Accept: application/pdf
+      // Use GET with Accept: application/pdf header as per Dotloop docs
       const response = await this.makeRequest(
         `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`,
         {
+          method: 'GET',  // Explicitly set GET method
           headers: {
             'Accept': 'application/pdf',
           },
@@ -340,14 +340,22 @@ class DotloopApiClient {
       return response;
     } catch (error) {
       console.error("❌ [DOWNLOAD] Document download failed:", error);
+      console.error("❌ [DOWNLOAD] Error status:", error.response?.status);
+      console.error("❌ [DOWNLOAD] Error method used:", error.config?.method);
       
-      // Try alternative endpoint pattern if first one fails
+      // If 405 method not allowed, the API definitely wants GET, not POST
+      if (error.response?.status === 405) {
+        console.log("⚠️ [DOWNLOAD] 405 Method Not Allowed - API requires GET, not POST");
+      }
+      
+      // Try alternative endpoint pattern if first one fails with 404
       if (error.response?.status === 404) {
         console.log("🔄 [DOWNLOAD] Trying alternative download endpoint...");
         try {
           const altResponse = await this.makeRequest(
             `/profile/${profileId}/loop/${loopId}/document/${documentId}`,
             {
+              method: 'GET',
               headers: {
                 'Accept': 'application/pdf',
               },
@@ -366,24 +374,55 @@ class DotloopApiClient {
 
   /* ---------------- Contact API Methods ---------------- */
 
-  async getContacts(params = {}) {
+  async getContacts(profileId = null, params = {}) {
+    // Based on research: contacts may need profile_id parameter
     const queryParams = new URLSearchParams(params).toString();
-    const endpoint = queryParams ? `/contact?${queryParams}` : "/contact";
+    let endpoint;
+    
+    if (profileId) {
+      endpoint = queryParams ? `/profile/${profileId}/contact?${queryParams}` : `/profile/${profileId}/contact`;
+    } else {
+      endpoint = queryParams ? `/contact?${queryParams}` : "/contact";
+    }
+    
+    console.log('📞 [CONTACTS] Fetching contacts with endpoint:', endpoint);
     return this.makeRequest(endpoint);
   }
 
-  async getContact(contactId) {
-    return this.makeRequest(`/contact/${contactId}`);
+  async getContact(contactId, profileId = null) {
+    let endpoint;
+    if (profileId) {
+      endpoint = `/profile/${profileId}/contact/${contactId}`;
+    } else {
+      endpoint = `/contact/${contactId}`;
+    }
+    return this.makeRequest(endpoint);
   }
 
   /* ---------------- Template API Methods ---------------- */
 
-  async getTemplates() {
-    return this.makeRequest("/template");
+  async getTemplates(profileId = null) {
+    // Based on research: templates may need profile_id parameter
+    let endpoint;
+    
+    if (profileId) {
+      endpoint = `/profile/${profileId}/loop-template`;
+    } else {
+      endpoint = "/template";
+    }
+    
+    console.log('📋 [TEMPLATES] Fetching templates with endpoint:', endpoint);
+    return this.makeRequest(endpoint);
   }
 
-  async getTemplate(templateId) {
-    return this.makeRequest(`/template/${templateId}`);
+  async getTemplate(templateId, profileId = null) {
+    let endpoint;
+    if (profileId) {
+      endpoint = `/profile/${profileId}/loop-template/${templateId}`;
+    } else {
+      endpoint = `/template/${templateId}`;
+    }
+    return this.makeRequest(endpoint);
   }
 }
 

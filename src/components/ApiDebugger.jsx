@@ -36,7 +36,14 @@ const ApiDebugger = () => {
     await testEndpoint('Profiles', () => dotloopApi.getProfiles());
     
     // Get profile ID for other tests
-    const profilesResult = results.Profiles?.data || await dotloopApi.getProfiles().catch(() => null);
+    let profilesResult;
+    try {
+      profilesResult = await dotloopApi.getProfiles();
+    } catch (error) {
+      console.error('❌ [DEBUG] Failed to get profiles for further testing:', error);
+      return;
+    }
+    
     const profileId = profilesResult?.data?.[0]?.id;
     
     if (profileId) {
@@ -45,10 +52,18 @@ const ApiDebugger = () => {
       // Test profile-specific endpoints
       await testEndpoint('Single Profile', () => dotloopApi.getProfile(profileId));
       await testEndpoint('Loops', () => dotloopApi.getLoops(profileId));
-      await testEndpoint('Contacts', () => dotloopApi.getContacts());
-      await testEndpoint('Templates', () => dotloopApi.getTemplates());
+      
+      // Test both profile-based and global contacts/templates
+      await testEndpoint('Contacts (Global)', () => dotloopApi.getContacts());
+      await testEndpoint('Contacts (Profile-based)', () => dotloopApi.getContacts(profileId));
+      await testEndpoint('Templates (Global)', () => dotloopApi.getTemplates());
+      await testEndpoint('Templates (Profile-based)', () => dotloopApi.getTemplates(profileId));
     } else {
       console.error('❌ [DEBUG] No profile ID available for further tests');
+      
+      // Still test global endpoints without profile
+      await testEndpoint('Contacts (Global)', () => dotloopApi.getContacts());
+      await testEndpoint('Templates (Global)', () => dotloopApi.getTemplates());
     }
   };
 
@@ -95,13 +110,24 @@ const ApiDebugger = () => {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">API Endpoint Debugger</h2>
-        <button
-          onClick={runTests}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          disabled={Object.values(loading).some(Boolean)}
-        >
-          Run All Tests
-        </button>
+        <div className="space-x-2">
+          <button
+            onClick={() => {
+              dotloopApi.clearTokens();
+              alert('Tokens cleared! Please refresh the page and log in again with new scopes.');
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+          >
+            Clear Tokens & Re-auth
+          </button>
+          <button
+            onClick={runTests}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            disabled={Object.values(loading).some(Boolean)}
+          >
+            Run All Tests
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -110,8 +136,10 @@ const ApiDebugger = () => {
           'Profiles', 
           'Single Profile',
           'Loops',
-          'Contacts',
-          'Templates'
+          'Contacts (Global)',
+          'Contacts (Profile-based)',
+          'Templates (Global)',
+          'Templates (Profile-based)'
         ].map(endpoint => (
           <div key={endpoint} className="border-l-4 border-gray-200 pl-4">
             <div className="font-medium">{endpoint}</div>
