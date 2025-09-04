@@ -18,8 +18,8 @@ const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || "http://localhost:3
 
 // OAuth 2.0 Scopes as per Dotloop API guidelines
 const SCOPES = [
-  "account:read", // Account details
   "admin:read", // Admin access for organization management
+  "account:read", // Account details
   "profile:*", // Profile information (all profile permissions)
   "loop:*", // Loop information, details, folders, documents, participants, tasks, activities (all loop permissions)
   "contact:*", // Contact information (all contact permissions)
