@@ -313,55 +313,155 @@ class DotloopApiClient {
   }
 
   async downloadDocument(profileId, loopId, folderId, documentId, documentName = "document") {
-    // Download a document as PDF (binary) following Dotloop API doc
+    console.log("📥 [DOWNLOAD] === STARTING DOCUMENT DOWNLOAD ===");
+    console.log("📥 [DOWNLOAD] Step 1: Input parameters validation");
+    console.log("📥 [DOWNLOAD] Parameters:", {
+      profileId,
+      loopId,
+      folderId,
+      documentId,
+      documentName,
+      profileIdType: typeof profileId,
+      loopIdType: typeof loopId,
+      folderIdType: typeof folderId,
+      documentIdType: typeof documentId,
+    });
+
+    // Validate required parameters
+    if (!profileId || !loopId || !folderId || !documentId) {
+      console.error("❌ [DOWNLOAD] Missing required parameters");
+      throw new Error("Missing required parameters for document download");
+    }
+
+    console.log("📥 [DOWNLOAD] Step 2: Building request URL");
+    const endpoint = `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`;
+    console.log("📥 [DOWNLOAD] Constructed endpoint:", endpoint);
+
+    console.log("📥 [DOWNLOAD] Step 3: Preparing request headers");
+    const requestHeaders = {
+      Accept: "application/pdf",
+    };
+    console.log("📥 [DOWNLOAD] Request headers:", requestHeaders);
+
+    console.log("📥 [DOWNLOAD] Step 4: Making initial API request");
+    console.log("📥 [DOWNLOAD] Request method: GET");
+    console.log("📥 [DOWNLOAD] Full request config:", {
+      endpoint,
+      method: "GET",
+      headers: requestHeaders,
+    });
+
     try {
-      const response = await this.makeRequest(
-        `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/pdf",
-          },
-        }
+      console.log("📥 [DOWNLOAD] Step 5: Executing makeRequest...");
+      const startTime = Date.now();
+
+      const response = await this.makeRequest(endpoint, {
+        method: "GET",
+        headers: requestHeaders,
+      });
+
+      const endTime = Date.now();
+      console.log("✅ [DOWNLOAD] Step 6: Request completed successfully");
+      console.log("✅ [DOWNLOAD] Request duration:", `${endTime - startTime}ms`);
+      console.log("✅ [DOWNLOAD] Response received, analyzing...");
+
+      // Log response details
+      console.log("📊 [DOWNLOAD] Step 7: Response analysis");
+      console.log("📊 [DOWNLOAD] Response type:", typeof response);
+      console.log("📊 [DOWNLOAD] Response constructor:", response?.constructor?.name);
+      console.log("📊 [DOWNLOAD] Is ArrayBuffer:", response instanceof ArrayBuffer);
+      console.log("📊 [DOWNLOAD] Has byteLength:", response && response.byteLength !== undefined);
+      console.log("📊 [DOWNLOAD] ByteLength value:", response?.byteLength);
+      console.log(
+        "📊 [DOWNLOAD] Response keys:",
+        response && typeof response === "object" ? Object.keys(response) : "N/A"
       );
 
-      // If response is arraybuffer, return it directly
+      // Check if response is arraybuffer
+      console.log("🔍 [DOWNLOAD] Step 8: Checking for ArrayBuffer response");
       if (response instanceof ArrayBuffer || (response && response.byteLength)) {
+        console.log("✅ [DOWNLOAD] Response is ArrayBuffer format");
+        console.log("✅ [DOWNLOAD] ArrayBuffer size:", response.byteLength, "bytes");
+        console.log("✅ [DOWNLOAD] Returning ArrayBuffer directly");
         return response;
       }
 
-      // If response is an object, check for binary data
+      // Check if response is an object with binary data
+      console.log("🔍 [DOWNLOAD] Step 9: Checking for object with binary data");
+      console.log("🔍 [DOWNLOAD] Response has data property:", response?.data !== undefined);
+      console.log("🔍 [DOWNLOAD] Response headers:", response?.headers);
+      console.log("🔍 [DOWNLOAD] Content-Type header:", response?.headers?.["content-type"]);
+
       if (response?.data && response?.headers?.["content-type"] === "application/pdf") {
+        console.log("✅ [DOWNLOAD] Found PDF data in response object");
+        console.log("✅ [DOWNLOAD] Data type:", typeof response.data);
+        console.log("✅ [DOWNLOAD] Data constructor:", response.data?.constructor?.name);
+        console.log("✅ [DOWNLOAD] Returning response.data");
         return response.data;
       }
 
-      // Otherwise, return as-is
+      // Fallback - return as-is
+      console.log("⚠️ [DOWNLOAD] Step 10: No specific binary format detected");
+      console.log("⚠️ [DOWNLOAD] Returning response as-is");
+      console.log("⚠️ [DOWNLOAD] Final response type:", typeof response);
       return response;
     } catch (error) {
+      console.error("❌ [DOWNLOAD] Step 6: Request failed with error");
+      console.error("❌ [DOWNLOAD] Error type:", error?.constructor?.name);
+      console.error("❌ [DOWNLOAD] Error message:", error?.message);
+      console.error("❌ [DOWNLOAD] Error status:", error?.response?.status);
+      console.error("❌ [DOWNLOAD] Error status text:", error?.response?.statusText);
+      console.error("❌ [DOWNLOAD] Error headers:", error?.response?.headers);
+      console.error("❌ [DOWNLOAD] Error data:", error?.response?.data);
+
       // If 405, log method issue
       if (error.response?.status === 405) {
-        console.warn("[Dotloop] 405 Method Not Allowed - ensure GET is used");
+        console.warn("⚠️ [DOWNLOAD] 405 Method Not Allowed - ensure GET is used");
+        console.warn("⚠️ [DOWNLOAD] This suggests the endpoint doesn't support GET method");
       }
+
       // If 404, try alternative endpoint (rare)
       if (error.response?.status === 404) {
+        console.log("🔄 [DOWNLOAD] Step 7: Attempting alternative endpoint due to 404");
+        const altEndpoint = `/profile/${profileId}/loop/${loopId}/document/${documentId}`;
+        console.log("🔄 [DOWNLOAD] Alternative endpoint:", altEndpoint);
+
         try {
-          const altResponse = await this.makeRequest(`/profile/${profileId}/loop/${loopId}/document/${documentId}`, {
+          console.log("🔄 [DOWNLOAD] Making request to alternative endpoint...");
+          const altStartTime = Date.now();
+
+          const altResponse = await this.makeRequest(altEndpoint, {
             method: "GET",
             headers: {
               Accept: "application/pdf",
             },
           });
+
+          const altEndTime = Date.now();
+          console.log("✅ [DOWNLOAD] Alternative endpoint succeeded");
+          console.log("✅ [DOWNLOAD] Alternative request duration:", `${altEndTime - altStartTime}ms`);
+          console.log("✅ [DOWNLOAD] Alternative response type:", typeof altResponse);
+          console.log("✅ [DOWNLOAD] Alternative response constructor:", altResponse?.constructor?.name);
+
           if (altResponse instanceof ArrayBuffer || (altResponse && altResponse.byteLength)) {
+            console.log("✅ [DOWNLOAD] Alternative response is ArrayBuffer");
+            console.log("✅ [DOWNLOAD] Alternative ArrayBuffer size:", altResponse.byteLength, "bytes");
             return altResponse;
           }
           if (altResponse?.data && altResponse?.headers?.["content-type"] === "application/pdf") {
+            console.log("✅ [DOWNLOAD] Alternative response has PDF data");
             return altResponse.data;
           }
+          console.log("✅ [DOWNLOAD] Returning alternative response as-is");
           return altResponse;
         } catch (altError) {
-          console.error("[Dotloop] Alternative endpoint failed:", altError);
+          console.error("❌ [DOWNLOAD] Alternative endpoint also failed");
+          console.error("❌ [DOWNLOAD] Alternative error:", altError?.message);
+          console.error("❌ [DOWNLOAD] Alternative error status:", altError?.response?.status);
         }
       }
+
+      console.error("❌ [DOWNLOAD] Step 8: Re-throwing original error");
       throw error;
     }
   }
