@@ -22,7 +22,7 @@ const SCOPES = [
   "admin:read", // Admin access for organization management
   "profile:*", // Profile information (all profile permissions)
   "loop:*", // Loop information, details, folders, documents, participants, tasks, activities (all loop permissions)
-  // "contact:*", // Contact information (all contact permissions)
+  "contact:*", // Contact information (all contact permissions)
   "template:*", // Loop templates (all template permissions)
 ];
 
