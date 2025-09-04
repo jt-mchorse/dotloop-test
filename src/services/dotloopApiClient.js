@@ -311,63 +311,56 @@ class DotloopApiClient {
     return this.makeRequest(`/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`);
   }
 
-  async downloadDocument(profileId, loopId, folderId, documentId, documentName = 'document') {
-    console.log("📥 [DOWNLOAD] Starting document download:", {
-      profileId,
-      loopId,
-      folderId,
-      documentId,
-      documentName,
-    });
-
-    // IMPORTANT: Use GET method, not POST. 405 error indicates method not allowed
+  async downloadDocument(profileId, loopId, folderId, documentId, documentName = "document") {
+    // Download a document as PDF (binary) following Dotloop API doc
     try {
-      // Use GET with Accept: application/pdf header as per Dotloop docs
       const response = await this.makeRequest(
         `/profile/${profileId}/loop/${loopId}/folder/${folderId}/document/${documentId}`,
         {
-          method: 'GET',  // Explicitly set GET method
+          method: "GET",
           headers: {
-            'Accept': 'application/pdf',
+            Accept: "application/pdf",
           },
         }
       );
 
-      console.log("✅ [DOWNLOAD] Document download successful, response type:", typeof response);
-      console.log("✅ [DOWNLOAD] Is ArrayBuffer:", response instanceof ArrayBuffer);
-      console.log("✅ [DOWNLOAD] Response size:", response?.byteLength || response?.length);
+      // If response is arraybuffer, return it directly
+      if (response instanceof ArrayBuffer || (response && response.byteLength)) {
+        return response;
+      }
 
+      // If response is an object, check for binary data
+      if (response?.data && response?.headers?.["content-type"] === "application/pdf") {
+        return response.data;
+      }
+
+      // Otherwise, return as-is
       return response;
     } catch (error) {
-      console.error("❌ [DOWNLOAD] Document download failed:", error);
-      console.error("❌ [DOWNLOAD] Error status:", error.response?.status);
-      console.error("❌ [DOWNLOAD] Error method used:", error.config?.method);
-      
-      // If 405 method not allowed, the API definitely wants GET, not POST
+      // If 405, log method issue
       if (error.response?.status === 405) {
-        console.log("⚠️ [DOWNLOAD] 405 Method Not Allowed - API requires GET, not POST");
+        console.warn("[Dotloop] 405 Method Not Allowed - ensure GET is used");
       }
-      
-      // Try alternative endpoint pattern if first one fails with 404
+      // If 404, try alternative endpoint (rare)
       if (error.response?.status === 404) {
-        console.log("🔄 [DOWNLOAD] Trying alternative download endpoint...");
         try {
-          const altResponse = await this.makeRequest(
-            `/profile/${profileId}/loop/${loopId}/document/${documentId}`,
-            {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/pdf',
-              },
-            }
-          );
-          console.log("✅ [DOWNLOAD] Alternative endpoint successful");
+          const altResponse = await this.makeRequest(`/profile/${profileId}/loop/${loopId}/document/${documentId}`, {
+            method: "GET",
+            headers: {
+              Accept: "application/pdf",
+            },
+          });
+          if (altResponse instanceof ArrayBuffer || (altResponse && altResponse.byteLength)) {
+            return altResponse;
+          }
+          if (altResponse?.data && altResponse?.headers?.["content-type"] === "application/pdf") {
+            return altResponse.data;
+          }
           return altResponse;
         } catch (altError) {
-          console.error("❌ [DOWNLOAD] Alternative endpoint also failed:", altError);
+          console.error("[Dotloop] Alternative endpoint failed:", altError);
         }
       }
-      
       throw error;
     }
   }
@@ -378,14 +371,14 @@ class DotloopApiClient {
     // Based on research: contacts may need profile_id parameter
     const queryParams = new URLSearchParams(params).toString();
     let endpoint;
-    
+
     if (profileId) {
       endpoint = queryParams ? `/profile/${profileId}/contact?${queryParams}` : `/profile/${profileId}/contact`;
     } else {
       endpoint = queryParams ? `/contact?${queryParams}` : "/contact";
     }
-    
-    console.log('📞 [CONTACTS] Fetching contacts with endpoint:', endpoint);
+
+    console.log("📞 [CONTACTS] Fetching contacts with endpoint:", endpoint);
     return this.makeRequest(endpoint);
   }
 
@@ -404,14 +397,14 @@ class DotloopApiClient {
   async getTemplates(profileId = null) {
     // Based on research: templates may need profile_id parameter
     let endpoint;
-    
+
     if (profileId) {
       endpoint = `/profile/${profileId}/loop-template`;
     } else {
       endpoint = "/template";
     }
-    
-    console.log('📋 [TEMPLATES] Fetching templates with endpoint:', endpoint);
+
+    console.log("📋 [TEMPLATES] Fetching templates with endpoint:", endpoint);
     return this.makeRequest(endpoint);
   }
 
